@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "zutils.h"
 #include "zstrq.h"
 
 #ifdef DEBUG
@@ -250,34 +251,6 @@ zsq_count_t zstrq_push_back_all (zstrq_t *dst, zstrq_t *src)
     zsq_count_t src_count = zstrq_get_str_count(src);
 
     return zstrq_push_back_multi(dst, src, 0, src_count);
-}
-
-//<! @return strlen(token)
-uint32_t get_token_pos( const char* str, 
-                        const char* delemiters,
-                        uint32_t search_from,
-                        uint32_t *stoken_start)
-{
-    uint32_t c, start, end;
-    for (start = search_from; (c = str[start]); ++start) 
-    {
-        if ( !strchr(delemiters, c) ) {
-            break;
-        }
-    }
-
-    if (stoken_start) {
-        *stoken_start = start;
-    }
-
-    for (end = start; (c = str[end]); ++end) 
-    {
-        if ( strchr(delemiters, c) ) {
-            break;
-        }
-    }
-
-    return end - start;
 }
 
 zsq_count_t zstrq_push_back_list(zstrq_t *dst,

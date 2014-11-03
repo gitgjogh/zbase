@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "zutils.h"
 #include "zhash.h"
 //#include "zlog.h"
 #include "zopt.h"

@@ -17,7 +17,10 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+
+#include "zutils.h"
 #include "zqueue.h"
+
 
 #ifdef DEBUG
     #define zqueue_dbg printf
@@ -25,7 +28,7 @@
     #define zqueue_dbg printf
 #endif
 
-#define     ZQUEUE_WRAPPING(depth, bidx)    (((bidx)>=(depth)) ? ((bidx)-(depth)) : (bidx))
+
 static zq_addr_t zqueue_get_elem_base_in_use(zqueue_t *q, zq_idx_t qidx);
 static zq_addr_t zqueue_get_elem_base_in_buf(zqueue_t *q, zq_idx_t qidx);
 static zq_addr_t zqueue_elem_2_swap(zqueue_t *q, zq_idx_t qidx);
@@ -312,84 +315,6 @@ zq_addr_t zqueue_set_elem_val_itnl(zqueue_t *q, zq_idx_t dst_idx, zq_idx_t src_i
     return 0;
 }
 
-void zmem_swap32(zq_addr_t base1, zq_addr_t base2, uint32_t sz)
-{
-    uint32_t m, *p1 = base1, *p2 = base2;
-    for ( ; sz>0; --sz, ++p1, ++p2) {
-        m = *p1;
-        *p1 = *p2;
-        *p2 = m;
-    }
-}
-
-void zmem_swap(zq_addr_t base1, zq_addr_t base2, 
-               uint32_t elem_size, uint32_t cnt)
-{
-    uint32_t sz = elem_size * cnt;
-
-    if (((uint32_t)base1&3) || ((uint32_t)base2&3) || (sz&3)) 
-    {
-        char m, *p1 = base1, *p2 = base2;
-        for ( ; sz>0; --sz, ++p1, ++p2) {
-            m = *p1;
-            *p1 = *p2;
-            *p2 = m;
-        }
-    } else {
-        zmem_swap32(base1, base2, sz/4);
-    }
-}
-
-void zmem_swap_near_block_32(zq_addr_t base, uint32_t sz, uint32_t shift)
-{
-    uint32_t i0 = 0;
-    uint32_t i1 = 0;
-    uint32_t *p = base;
-    uint32_t tmp = p[i0];
-
-    if (sz==0 || shift==0 || sz==shift) {
-        return;
-    }
-
-    do {
-        i0 = i1;
-        i1 = ZQUEUE_WRAPPING(sz, shift + i0);
-        p[i0] = p[i1];
-    } while (i1 != 0);
-    p[i0] = tmp;
-}
-
-/**
- *  swap_pos(,,7,2) : 0123456 78 -> 78 0123456
- */
-void zmem_swap_near_block(zq_addr_t base, uint32_t elem_size, 
-                          uint32_t cnt1,  uint32_t cnt2)
-{
-    uint32_t sz = elem_size * (cnt1 + cnt2); 
-    uint32_t shift = elem_size * cnt1;
-
-    if (cnt1==0 || cnt2==0) {
-        return;
-    }
-
-    if (((uint32_t)base&3) || (sz&3) || (shift&3)) 
-    {
-        uint32_t i0 = 0;
-        uint32_t i1 = 0;
-        char *p = base;
-        char tmp = p[i0];
-        do {
-            i0 = i1;
-            i1 = ZQUEUE_WRAPPING(sz, shift + i0);
-            p[i0] = p[i1];
-        } while (i1 != 0);
-        p[i0] = tmp;
-    }
-    else {
-        zmem_swap_near_block_32(base, sz/4, shift/4);
-    }
-}
-
 static 
 zq_addr_t zqueue_elem_2_swap(zqueue_t *q, zq_idx_t qidx)
 {
@@ -599,9 +524,7 @@ void zqueue_print(char *q_name, zqueue_t *q, zq_print_func_t func)
 }
 
 
-#define ZQUEUE_TEST 0
-
-#if ZQUEUE_TEST
+#ifdef ZQUEUE_TEST
 
 #define     DEREF_I32(pi)       (*((int *)pi))
 #define     SET_ITEM(i)         (item=i, &item)

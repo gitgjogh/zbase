@@ -135,12 +135,5 @@ zq_addr_t   zqueue_back(zq_iter_t *iter);
 zq_addr_t   zqueue_prev(zq_iter_t *iter);
 
 
-/************************************************************************/
-/* utils                                                                */
-/************************************************************************/
-void zmem_swap(zq_addr_t base1, zq_addr_t base2, uint32_t elem_size, uint32_t cnt);
-void zmem_swap_near_block(zq_addr_t base, uint32_t elem_size, 
-                          uint32_t cnt1, uint32_t cnt2);
-
 
 #endif //ZQUEUE_H_

@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+
+#include "zutils.h"
 #include "zlist.h"
 
 
