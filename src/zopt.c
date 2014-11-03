@@ -110,6 +110,9 @@ int zopt_print_help(zopt_t *opt, zopt_node_t *node)
     zopt_node_t *sub = 0;
 
     cmdl_zlog("    -%s : %s\n", node->key, node->help);
+    if (node->enum_type) {
+        zopt_print_enum(opt, node);
+    }
 
     if (node->sub_type) 
     {
@@ -173,6 +176,89 @@ int zopt_parse_help(zopt_t *opt, zarg_iter_t *argq, zopt_node_t *node)
     return 0;
 }
 
+void zopt_print_enum(zopt_t *opt, zopt_node_t *node)
+{
+    zopt_node_t *entry = 0;
+
+    if (node->enum_type) {
+        zh_iter_t _iter = zhash_iter(opt->h), *iter = &_iter;
+
+        cmdl_zlog("\t\t");
+        for (entry=zhash_front(iter); entry!=0; entry=zhash_next(iter))
+        {
+            if (entry->type == node->enum_type) {
+                cmdl_zlog("%s:%d,", entry->key, entry->enum_val);
+            }
+        }
+        cmdl_zlog("\n");
+    }
+}
+
+int zopt_parse_enum(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
+{
+    char *arg = zarg_curr_param(iter);
+
+    if ( arg ) {
+        zopt_node_t *entry = zhash_get_node(opt->h, node->enum_type, arg, 0);
+        if ( entry ) {
+            *((int *)node->p_val) = entry->enum_val;
+            return zarg_next(iter);
+        } else {
+            cmdl_zlog("@err>> `%s` is not valid value for `-%s`\n", arg, node->key);
+            return zarg_err(iter);
+        }
+    } else {
+        cmdl_zlog("@err>> no param for `-%s`\n", node->key);
+        *((char **)node->p_val) = 0;
+        return zarg_err(iter);
+    }
+}
+
+int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc)
+{
+    zh_type_t enum_type = node->enum_type = zhash_reg_new_type(opt->h);
+
+    uint32_t pos, start, str_len, b_found;
+    zopt_node_t *entry = 0;
+    int32_t last_val = -1;
+    uint32_t item_cnt = 0;
+    uint32_t new_pos = 0;
+
+    for (pos = start = 0;;) {
+        str_len = get_token_pos(desc, " ,=", pos, &start);
+        if (str_len<=0) {
+            break;
+        }
+        pos = start + str_len;
+
+        entry = zhash_touch_node(
+                opt->h, enum_type, &desc[start], str_len, 1, &b_found);
+        if (!entry) {
+            break;
+        }
+        entry->enum_val = ++last_val;
+        item_cnt += 1;
+
+        // get '='
+        str_len = get_token_pos(desc, " ,", pos, &start);
+        if (str_len<=0 || desc[start] != '=') {
+            continue;
+        }
+
+        // get 'int'
+        str_len = get_token_pos(desc, " ,=", pos, &start);
+        if (str_len<=0) {
+            cmdl_zlog("@err>> no value after `=`\n");
+
+            break;
+        }
+        pos = start + str_len;
+        entry->enum_val = last_val = atoi( &desc[start] );
+    }
+
+    return item_cnt;
+}
+
 zh_addr_t zopt_add_root(zopt_t *opt, const char *key, const char *help)
 {
     zh_type_t  type = zhash_reg_new_type(opt->h);
@@ -211,7 +297,8 @@ zh_addr_t zopt_add_node(zopt_t       *opt,
 {
     int b_found;
     zopt_node_t *father = zopt_get_father(opt);
-    zopt_node_t *node = zhash_touch_node(opt->h, father->sub_type, key, 0, 1, &b_found);
+    zopt_node_t *node = zhash_touch_node(opt->h, 
+            father->sub_type, key, 0, 1, &b_found);
 
     if (node) {
         node->sub_type = 0;
@@ -371,12 +458,14 @@ int zopt_parse_argcv(zopt_t *opt, int argc, char **argv)
 typedef struct pet{
     char *name;
     char *color;
+    int  icolor;
     int  age;
 }pet_t;
 
 int main(int argc, char **argv)
 {
     zopt_t *opt = zopt_malloc(8);
+    zopt_node_t *node = 0;
     pet_t dog = {"void", "void", 0};
     pet_t cat = {"void", "void", 0};
     int ret=0;
@@ -387,16 +476,20 @@ int main(int argc, char **argv)
     zopt_start_group(opt, "dog", "dog props");
     zopt_add_node(opt, "name",   zopt_parse_str, &dog.name,  "");
     zopt_add_node(opt, "color",  zopt_parse_str, &dog.color, "");
+    node = zopt_add_node(opt, "icolor", zopt_parse_enum, &dog.icolor, "");
+    zopt_create_enum(opt, node, "red=0,green,blue, yellow=6");
     zopt_add_node(opt, "age",    zopt_parse_int, &dog.age,   "");
     zopt_end_group(opt, "dog");
 
     zopt_start_group(opt, "cat", "cat props");
     zopt_add_node(opt, "name",   zopt_parse_str, &cat.name,  "");
     zopt_add_node(opt, "color",  zopt_parse_str, &cat.color, "");
+    node = zopt_add_node(opt, "icolor", zopt_parse_enum, &cat.icolor, "");
+    zopt_create_enum(opt, node, "red=0,green,blue, yellow=6");
     zopt_add_node(opt, "age",    zopt_parse_int, &cat.age,   "");
     zopt_end_group(opt, "cat");
 
-    //zopt_print_help(opt, zopt_get_root(opt));
+    zopt_print_help(opt, zopt_get_root(opt));
     ret = zopt_parse_argcv(opt, argc, argv);
 
     if (ret<0) {
@@ -405,9 +498,9 @@ int main(int argc, char **argv)
     } else if (ret==0){
         // help
     } else{
-        printf("\n\ndog : %s, %s, %d; cat : %s, %s, %d\n", 
-            dog.name, dog.color, dog.age,
-            cat.name, cat.color, cat.age); 
+        printf("\n\ndog : %s, %s, %d, %d; cat : %s, %s, %d, %d\n", 
+            dog.name, dog.color, dog.icolor, dog.age,
+            cat.name, cat.color, cat.icolor, cat.age); 
     }
     zopt_free(opt);
 

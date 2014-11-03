@@ -44,7 +44,7 @@ typedef enum {
     ZOPT_TYPE_INT,
     ZOPT_TYPE_STR,
     ZOPT_TYPE_EXT,
-}opt_type_t;
+}zopt_type_t;
 
 typedef struct zopt_node {
     ZHASH_COMMON;
@@ -53,6 +53,9 @@ typedef struct zopt_node {
     const char  *help;
     zopt_func_t func;
     void        *p_val;
+
+    zopt_type_t enum_type;
+    int32_t     enum_val;
 }zopt_node_t;
 
 typedef struct zhash_parser {
@@ -65,9 +68,9 @@ zopt_t*     zopt_malloc(uint32_t depth_log2);
 #define     ZOPT_MALLOC(type_t, log2)   zopt_malloc(sizeof(type_t), log2);
 void        zopt_free(zopt_t *opt);
 
-zh_addr_t   zopt_add_node( zopt_t      *opt,
+zh_addr_t   zopt_add_node( zopt_t       *opt,
                            const char   *key,
-                           zopt_func_t  func, 
+                           zopt_func_t   func, 
                            void         *p_val, 
                            const char   *help);
 
@@ -92,5 +95,8 @@ int zopt_parse_flag(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node);
 int zopt_parse_int(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node);
 int zopt_parse_str(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node);
 
+int zopt_parse_enum(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node);
+int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc);
+void zopt_print_enum(zopt_t *opt, zopt_node_t *node);
 
-#endif //#ifndef VDEC_ZDBG_H_
+#endif //#ifndef ZOPT_H_

@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../inc/"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE; ZLIST_TEST"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE; ZOPT_TEST"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
