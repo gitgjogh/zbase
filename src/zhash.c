@@ -39,6 +39,7 @@ zhash_t *zhash_malloc(uint32_t node_size, uint32_t depth_log2)
 
     zh->hash_tbl = calloc(zh->depth, sizeof(zh_head_t));
     zh->nodeq = zqueue_malloc(node_size, zh->depth);
+    zqueue_memzero(zh->nodeq);
     zh->strq  = zstrq_malloc(0);
 
     if (!zh->hash_tbl || !zh->nodeq || !zh->strq) {

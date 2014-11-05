@@ -41,4 +41,6 @@ uint32_t    get_token_pos(const char* str,
                           uint32_t search_from,
                           uint32_t *stoken_start);
 
+uint32_t    jump_front(const char* str, const char* jumpset);
+
 #endif //#ifndef ZUTILS_H_

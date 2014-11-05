@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../inc/"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE; ZOPT_TEST"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE; ZLOG_TEST"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -184,6 +184,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\zlog.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\zopt.c"
 				>
 			</File>
@@ -211,6 +215,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\zlist.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\zlog.h"
 				>
 			</File>
 			<File

@@ -95,6 +95,19 @@ void zmem_swap_near_block(void* base, uint32_t elem_size,
     }
 }
 
+uint32_t jump_front(const char* str, const char* jumpset)
+{
+    uint32_t c, start;
+    for (start = 0; (c = str[start]); ++start) 
+    {
+        if ( !strchr(jumpset, c) ) {
+            break;
+        }
+    }
+
+    return start;
+}
+
 uint32_t get_token_pos(const char* str, 
                        const char* delemiters,
                        uint32_t search_from,

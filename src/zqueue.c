@@ -69,6 +69,13 @@ zqueue_t *zqueue_malloc(uint32_t elem_size, uint32_t depth)
     return 0;
 }
 
+void zqueue_memzero(zqueue_t *q) 
+{
+    if (q) {
+        memset(q->elem_array, 0, q->elem_size * q->depth);
+    }
+}
+
 zqueue_t* zqueue_realloc(zqueue_t *q, uint32_t depth)
 {
     if ((int)depth > q->depth) {

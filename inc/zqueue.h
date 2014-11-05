@@ -50,6 +50,7 @@ uint32_t    zqueue_size(uint32_t elem_size, uint32_t depth);
 #define     ZQUEUE_SIZE(type_t, depth)      zqueue_size(sizeof(type_t), (depth))
 zqueue_t*   zqueue_placement_new(zq_addr_t buf, uint32_t elem_size, uint32_t depth);
 zqueue_t*   zqueue_malloc(uint32_t elem_size, uint32_t depth);
+void        zqueue_memzero(zqueue_t *q);
 zqueue_t*   zqueue_realloc(zqueue_t *q, uint32_t depth);
 #define     ZQUEUE_MALLOC(type_t, depth)    zqueue_malloc(sizeof(type_t), (depth))
 void        zqueue_free(zqueue_t *q);

@@ -65,7 +65,6 @@ typedef struct zhash_parser {
 
 
 zopt_t*     zopt_malloc(uint32_t depth_log2);
-#define     ZOPT_MALLOC(type_t, log2)   zopt_malloc(sizeof(type_t), log2);
 void        zopt_free(zopt_t *opt);
 
 zh_addr_t   zopt_add_node( zopt_t       *opt,
