@@ -18,21 +18,15 @@
 #define ZUTILS_H_
 
 
-#ifndef     uint32_t
-#define     uint32_t    unsigned int
-#endif
-
-#ifndef     int32_t
-#define     int32_t     int
-#endif
+#include "zdefs.h"
 
 
 #define     ZWRAP_AROUND(depth, bidx)    (((bidx)>=(depth)) ? ((bidx)-(depth)) : (bidx))
 
+void        zmem_swap(zaddr_t base1, zaddr_t base2, 
+                      uint32_t elem_size, uint32_t cnt);
 
-void        zmem_swap(void* base1, void* base2, uint32_t elem_size, uint32_t cnt);
-
-void        zmem_swap_near_block(void* base, uint32_t elem_size, 
+void        zmem_swap_near_block(zaddr_t  base, uint32_t elem_size, 
                                  uint32_t cnt1, uint32_t cnt2);
 
 //<! @return strlen(token)

@@ -57,7 +57,7 @@ zstrq_t* zstrq_malloc(uint32_t size)
 
 zstrq_t* zstrq_realloc(zstrq_t *sq, uint32_t new_size)
 {
-    zsq_idx_t idx = 0;
+    zqidx_t idx = 0;
     zsq_ptr_t *old_ptr_array = 0;
     zsq_ptr_t *new_ptr_array = 0;
 
@@ -108,29 +108,29 @@ void zstrq_free(zstrq_t *sq)
     }
 }
 
-zsq_space_t zstrq_get_buf_size(zstrq_t *sq)
+zspace_t zstrq_get_buf_size(zstrq_t *sq)
 {
     return sq->buf_size;
 }
 
-zsq_count_t zstrq_get_str_count(zstrq_t *sq)
+zcount_t zstrq_get_str_count(zstrq_t *sq)
 {
     return sq->numstr;
 }
 
-zsq_space_t zstrq_get_buf_space(zstrq_t *sq)
+zspace_t zstrq_get_buf_space(zstrq_t *sq)
 {
     /* reserve one zsq_ptr_t space for future use */
     return sq->buf_size - sq->buf_used - sizeof(zsq_ptr_t) * (1 + sq->numstr);
 }
 
 static
-zsq_char_t* zstrq_set_str_base(zstrq_t *sq, zsq_idx_t qidx, zsq_char_t *base)
+zsq_char_t* zstrq_set_str_base(zstrq_t *sq, zqidx_t qidx, zsq_char_t *base)
 {
     sq->ptr_array[-qidx] = base;
 }
 
-zsq_char_t* zstrq_get_str_base(zstrq_t *sq, zsq_idx_t qidx)
+zsq_char_t* zstrq_get_str_base(zstrq_t *sq, zqidx_t qidx)
 {
     if (0<=qidx && qidx <= sq->numstr) {
         zsq_char_t* str = sq->ptr_array[-qidx];
@@ -140,7 +140,7 @@ zsq_char_t* zstrq_get_str_base(zstrq_t *sq, zsq_idx_t qidx)
     return 0;
 }
 
-uint32_t    zstrq_get_str_size(zstrq_t *sq, zsq_idx_t qidx)
+uint32_t    zstrq_get_str_size(zstrq_t *sq, zqidx_t qidx)
 {
     if (0<=qidx && qidx <= sq->numstr) {
         zsq_char_t* str = sq->ptr_array[-qidx];
@@ -150,11 +150,11 @@ uint32_t    zstrq_get_str_size(zstrq_t *sq, zsq_idx_t qidx)
     return 0;
 }
 
-zsq_addr_t  zstrq_push_back(zstrq_t *sq, const zsq_char_t* str, uint32_t str_len)
+zaddr_t  zstrq_push_back(zstrq_t *sq, const zsq_char_t* str, uint32_t str_len)
 {
     zsq_char_t  c = 0;
-    zsq_space_t i = 0;
-    zsq_space_t space = 0;
+    zspace_t i = 0;
+    zspace_t space = 0;
     zsq_char_t *dst =0;
 
     if (!str) {
@@ -185,7 +185,7 @@ zsq_addr_t  zstrq_push_back(zstrq_t *sq, const zsq_char_t* str, uint32_t str_len
     return dst; 
 }
 
-zsq_addr_t  zstrq_pop_back(zstrq_t *sq, uint32_t *str_len)
+zaddr_t  zstrq_pop_back(zstrq_t *sq, uint32_t *str_len)
 {
     if (sq->numstr>0) {
         zsq_char_t *base = sq->ptr_array[ 1 - sq->numstr ];
@@ -199,13 +199,13 @@ zsq_addr_t  zstrq_pop_back(zstrq_t *sq, uint32_t *str_len)
     return 0;
 }
 
-zsq_count_t zstrq_push_back_v(zstrq_t *sq, zsq_count_t n, const zsq_char_t* cstr, ...)
+zcount_t zstrq_push_back_v(zstrq_t *sq, zcount_t n, const zsq_char_t* cstr, ...)
 {
-    zsq_count_t i = 0;
+    zcount_t i = 0;
     zsq_char_t *pstr;
     va_list ap;
 
-    zsq_addr_t base = zstrq_push_back(sq, cstr, 0);
+    zaddr_t base = zstrq_push_back(sq, cstr, 0);
     if (!base) {
         return 0;
     }
@@ -223,13 +223,13 @@ zsq_count_t zstrq_push_back_v(zstrq_t *sq, zsq_count_t n, const zsq_char_t* cstr
     return i;
 }
 
-zsq_count_t zstrq_push_back_multi(zstrq_t *dst, zstrq_t *src, 
-                                  zsq_idx_t src_start, 
-                                  zsq_count_t push_count)
+zcount_t zstrq_push_back_multi(zstrq_t *dst, zstrq_t *src, 
+                                  zqidx_t src_start, 
+                                  zcount_t push_count)
 {
-    zsq_idx_t qidx = 0;
-    zsq_addr_t src_base = 0;
-    zsq_addr_t dst_base = 0;
+    zqidx_t qidx = 0;
+    zaddr_t src_base = 0;
+    zaddr_t dst_base = 0;
 
     for (qidx=0; qidx<push_count; ++qidx) {
         src_base = zstrq_get_str_base(src, src_start+qidx);
@@ -246,20 +246,20 @@ zsq_count_t zstrq_push_back_multi(zstrq_t *dst, zstrq_t *src,
     return qidx;
 }
 
-zsq_count_t zstrq_push_back_all (zstrq_t *dst, zstrq_t *src)
+zcount_t zstrq_push_back_all (zstrq_t *dst, zstrq_t *src)
 {
-    zsq_count_t src_count = zstrq_get_str_count(src);
+    zcount_t src_count = zstrq_get_str_count(src);
 
     return zstrq_push_back_multi(dst, src, 0, src_count);
 }
 
-zsq_count_t zstrq_push_back_list(zstrq_t *dst,
+zcount_t zstrq_push_back_list(zstrq_t *dst,
                                  zsq_char_t *key_list,
                                  zsq_char_t *delemiters)
 {
     uint32_t pos, start, str_len;
-    zsq_count_t ori_count = zstrq_get_str_count(dst);
-    zsq_addr_t base = 0;
+    zcount_t ori_count = zstrq_get_str_count(dst);
+    zaddr_t base = 0;
 
     for (pos = 0; ;pos = start+str_len) {
         str_len = get_token_pos(key_list, delemiters, pos, &start);
@@ -279,8 +279,8 @@ zsq_count_t zstrq_push_back_list(zstrq_t *dst,
 
 void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
 {
-    zsq_idx_t qidx;
-    zsq_count_t count = zstrq_get_str_count(sq);
+    zqidx_t qidx;
+    zcount_t count = zstrq_get_str_count(sq);
 
     zhash_dbg("@zlist>> %s: buf_size=%d, count=%d, buf_used=%d+%d*4+4=%d, space=%d\n", 
         q_name, 
@@ -299,7 +299,7 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
 
     for (qidx = 0; qidx < count; ++ qidx)
     {
-        zsq_addr_t base = zstrq_get_str_base(sq, qidx);
+        zaddr_t base = zstrq_get_str_base(sq, qidx);
         func( qidx, base );
     }
 
@@ -313,13 +313,13 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
 #define     SET_ITEM(qidx)         (item=qidx, &item)
 
 static
-int32_t cmp_func(zsq_addr_t cmp_base, zsq_addr_t elem_base)
+int32_t cmp_func(zaddr_t cmp_base, zaddr_t elem_base)
 {
     return DEREF_I32(cmp_base) - DEREF_I32(elem_base);
 }
 
 static
-void print_func(zq_idx_t idx, zsq_addr_t elem_base)
+void print_func(zqidx_t idx, zaddr_t elem_base)
 {
     zhash_dbg("@zstrq>> [%8d] : %s\n", idx, elem_base);
 }

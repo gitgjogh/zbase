@@ -17,16 +17,10 @@
 #ifndef ZHASH_H_
 #define ZHASH_H_
 
+#include "zdefs.h"
 #include "zqueue.h"
 #include "zstrq.h"
 
-
-typedef     zq_count_t      zh_count_t;
-typedef     zh_count_t      zh_space_t;
-typedef     zq_addr_t       zh_addr_t;
-typedef     zq_idx_t        zh_idx_t;   
-typedef     zq_idx_t        zh_bidx_t;
-#define     ZH_ERR_IDX      ZQ_ERR_IDX
 typedef     unsigned long   zh_hash_t;
 typedef     int32_t         zh_type_t;
 
@@ -61,10 +55,10 @@ typedef struct zhash
 }zhash_t;
 
 
-#define HASH_FOUND          (1<<0)    
-#define HASH_NODE_BUF_OF    (1<<1)
-#define HASH_KEY_BUF_OF     (1<<2)
-#define HASH_OBJ_BUF_OF     (1<<3)
+#define     HASH_FOUND          (1<<0)    
+#define     HASH_NODE_BUF_OF    (1<<1)
+#define     HASH_KEY_BUF_OF     (1<<2)
+#define     HASH_OBJ_BUF_OF     (1<<3)
 
 
 zhash_t*    zhash_malloc(uint32_t node_size, uint32_t depth_log2);
@@ -76,14 +70,14 @@ zh_type_t   zhash_reg_new_type(zhash_t *h);
  *  @param key_len  - If 0, @key is null end str. 
  *                  - Else, size of @key is think to be @key_len anyway
  */
-zh_addr_t   zhash_touch_node(zhash_t    *h, 
+zaddr_t     zhash_touch_node(zhash_t    *h, 
                             uint32_t    type, 
                             const char *key, 
                             uint32_t    keylen,
                             int         b_insert, 
                             int         *b_found);
 
-zh_addr_t   zhash_get_node(zhash_t      *h, 
+zaddr_t     zhash_get_node(zhash_t      *h, 
                            uint32_t     type, 
                            const char   *key, 
                            uint32_t     keylen);
@@ -91,13 +85,13 @@ zh_addr_t   zhash_get_node(zhash_t      *h,
 /** iterators */
 typedef struct zhash_iterator {
     zhash_t *h;
-    zq_idx_t iter_idx;
+    zqidx_t iter_idx;
 }zh_iter_t;
 
 zh_iter_t   zhash_iter(zhash_t *h);
-zh_addr_t   zhash_front(zh_iter_t *iter);
-zh_addr_t   zhash_next(zh_iter_t *iter);
-zh_addr_t   zhash_back(zh_iter_t *iter);
-zh_addr_t   zhash_prev(zh_iter_t *iter);
+zaddr_t     zhash_front(zh_iter_t *iter);
+zaddr_t     zhash_next(zh_iter_t *iter);
+zaddr_t     zhash_back(zh_iter_t *iter);
+zaddr_t     zhash_prev(zh_iter_t *iter);
 
 #endif // ZHASH_H_

@@ -106,7 +106,7 @@ void zopt_free(zopt_t *opt)
 
 int zopt_print_help(zopt_t *opt, zopt_node_t *node)
 {
-    zq_idx_t node_count = 1;
+    zqidx_t node_count = 1;
     zopt_node_t *sub = 0;
 
     cmdl_zlog("    -%s : %s\n", node->key, node->help);
@@ -259,7 +259,7 @@ int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc)
     return item_cnt;
 }
 
-zh_addr_t zopt_add_root(zopt_t *opt, const char *key, const char *help)
+zaddr_t zopt_add_root(zopt_t *opt, const char *key, const char *help)
 {
     zh_type_t  type = zhash_reg_new_type(opt->h);
     zopt_node_t *root = zhash_touch_node(opt->h, type, key, 0, 1, 0);
@@ -271,7 +271,7 @@ zh_addr_t zopt_add_root(zopt_t *opt, const char *key, const char *help)
     return root;
 }
 
-zh_addr_t zopt_get_root(zopt_t *opt)
+zaddr_t zopt_get_root(zopt_t *opt)
 {
     zopt_node_t **root = zqueue_get_front_base(opt->access_stack);
     if (root) {
@@ -280,7 +280,7 @@ zh_addr_t zopt_get_root(zopt_t *opt)
     return 0;
 }
 
-zh_addr_t zopt_get_father(zopt_t *opt)
+zaddr_t zopt_get_father(zopt_t *opt)
 {
     zopt_node_t **father = zqueue_get_back_base(opt->access_stack);
     if (father) {
@@ -289,7 +289,7 @@ zh_addr_t zopt_get_father(zopt_t *opt)
     return 0;
 }
 
-zh_addr_t zopt_add_node(zopt_t       *opt, 
+zaddr_t zopt_add_node(  zopt_t       *opt, 
                         const char   *key,
                         zopt_func_t  func, 
                         void         *p_val, 
@@ -311,7 +311,7 @@ zh_addr_t zopt_add_node(zopt_t       *opt,
     return 0;
 }
 
-zh_addr_t zopt_start_group(zopt_t *opt, const char *key, const char *help)
+zaddr_t zopt_start_group(zopt_t *opt, const char *key, const char *help)
 {
     int b_found;
     zopt_node_t *father = 0;
@@ -345,7 +345,7 @@ zh_addr_t zopt_start_group(zopt_t *opt, const char *key, const char *help)
     return 0;
 }
 
-zh_addr_t zopt_end_group(zopt_t *opt, const char   *key)
+zaddr_t zopt_end_group(zopt_t *opt, const char   *key)
 {
     zopt_node_t **father = 0;
 

@@ -29,22 +29,6 @@
 #include "zhash.h"
 
 
-#ifndef     uint32_t
-#define     uint32_t        unsigned int
-#endif
-
-#ifndef     int32_t
-#define     int32_t         int
-#endif
-
-typedef     void*           zaddr_t;
-typedef     void*           zfunc_t;
-typedef     void*           zfile_t;
-
-typedef int (*zprintf_t)(const char *fmt, ...);
-typedef int (*zvprintf_t)(const char *fmt, va_list ap);
-#define ZLOG_STDOUT_FUNC vprintf
-
 typedef struct zlog_node {
     ZHASH_COMMON;
     int         b_log1;

@@ -95,7 +95,7 @@ uint32_t zh_cstr_time33(uint32_t type, const char *key, uint32_t *key_len)
     return hash; 
 }
 
-zh_addr_t zhash_touch_node(zhash_t *h, 
+zaddr_t     zhash_touch_node(zhash_t *h, 
                             uint32_t type, 
                             const char *key, 
                             uint32_t key_len,
@@ -153,7 +153,7 @@ zh_addr_t zhash_touch_node(zhash_t *h,
 }
 
 
-zh_addr_t zhash_get_node(zhash_t *h, uint32_t type, 
+zaddr_t     zhash_get_node(zhash_t *h, uint32_t type, 
                            const char *key, uint32_t keylen)
 {
     return zhash_touch_node(h, type, key, keylen, 0, 0);
@@ -165,20 +165,20 @@ zh_iter_t   zhash_iter(zhash_t *h)
     return iter;
 }
 
-zh_addr_t zhash_front(zh_iter_t *iter) 
+zaddr_t zhash_front(zh_iter_t *iter) 
 {
     return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=0);
 }
-zh_addr_t zhash_next(zh_iter_t *iter)  
+zaddr_t zhash_next(zh_iter_t *iter)  
 { 
     return zqueue_get_elem_base(iter->h->nodeq, ++ iter->iter_idx);
 }
-zh_addr_t zhash_back(zh_iter_t *iter)  
+zaddr_t zhash_back(zh_iter_t *iter)  
 { 
-    zq_count_t count = zqueue_get_count(iter->h->nodeq);
+    zcount_t count = zqueue_get_count(iter->h->nodeq);
     return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=count-1);
 }
-zh_addr_t zhash_prev(zh_iter_t *iter)  
+zaddr_t zhash_prev(zh_iter_t *iter)  
 { 
     return zqueue_get_elem_base(iter->h->nodeq, -- iter->iter_idx);
 }

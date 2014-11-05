@@ -67,18 +67,18 @@ typedef struct zhash_parser {
 zopt_t*     zopt_malloc(uint32_t depth_log2);
 void        zopt_free(zopt_t *opt);
 
-zh_addr_t   zopt_add_node( zopt_t       *opt,
+zaddr_t     zopt_add_node( zopt_t       *opt,
                            const char   *key,
                            zopt_func_t   func, 
                            void         *p_val, 
                            const char   *help);
 
-zh_addr_t   zopt_add_root(zopt_t *opt, const char *key, const char *help);
-zh_addr_t   zopt_get_root(zopt_t *opt);
-zh_addr_t   zopt_get_father(zopt_t *opt);
+zaddr_t     zopt_add_root(zopt_t *opt, const char *key, const char *help);
+zaddr_t     zopt_get_root(zopt_t *opt);
+zaddr_t     zopt_get_father(zopt_t *opt);
 
-zh_addr_t   zopt_start_group(zopt_t *opt, const char *key, const char *help);
-zh_addr_t   zopt_end_group(zopt_t *opt, const char *key);
+zaddr_t     zopt_start_group(zopt_t *opt, const char *key, const char *help);
+zaddr_t     zopt_end_group(zopt_t *opt, const char *key);
 
 
 int zopt_parse_argcv(zopt_t *opt, int argc, char *argv[]);

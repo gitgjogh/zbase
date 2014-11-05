@@ -31,9 +31,9 @@
 zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth)
 {
     zlist_t *zl = malloc(sizeof(zlist_t));
-    zl_bidx_t *bidxq = malloc(depth * sizeof(zl_bidx_t));
-    zl_addr_t  elemq = malloc(depth * elem_size);
-    zl_idx_t qidx;
+    zbidx_t *bidxq = malloc(depth * sizeof(zbidx_t));
+    zaddr_t  elemq = malloc(depth * elem_size);
+    zqidx_t qidx;
 
     if (!zl || !bidxq || !elemq) {
         zlist_dbg("@err>> %s failed\n", __FUNCTION__);
@@ -61,10 +61,10 @@ zlist_t *zlist_realloc(zlist_t *zl, uint32_t depth)
 {
     if ((int)depth>zl->depth) 
     {
-        zl_idx_t qidx;
+        zqidx_t qidx;
 
-        zl_bidx_t *bidxq = realloc(zl->bidx_array, depth * sizeof(zl_bidx_t));
-        zl_addr_t  elemq = realloc(zl->elem_array, depth * zl->elem_size);
+        zbidx_t *bidxq = realloc(zl->bidx_array, depth * sizeof(zbidx_t));
+        zaddr_t  elemq = realloc(zl->elem_array, depth * zl->elem_size);
 
         //! bidxq[qidx] = qidx
         for (qidx=zl->depth; qidx<(int)depth; ++qidx) { 
@@ -85,50 +85,50 @@ void zlist_free(zlist_t *zl)
     }
 }
 
-zl_count_t zlist_get_depth(zlist_t *zl)
+zcount_t zlist_get_depth(zlist_t *zl)
 {
     return (zl->depth);
 }
 
-zl_count_t zlist_get_count(zlist_t *zl)
+zcount_t zlist_get_count(zlist_t *zl)
 {
     return (zl->count);
 }
 
-zl_space_t zlist_get_space(zlist_t *zl)
+zspace_t zlist_get_space(zlist_t *zl)
 {
     return (zl->depth - zl->count);
 }
 
-zl_bidx_t zlist_get_elem_bidx(zlist_t *zl, zl_idx_t qidx)
+zbidx_t zlist_get_elem_bidx(zlist_t *zl, zqidx_t qidx)
 {
-    zl_count_t count = zlist_get_count(zl);
+    zcount_t count = zlist_get_count(zl);
 
-    return (0<=qidx && qidx < count) ? zl->bidx_array[qidx] : ZQ_ERR_IDX;
+    return (0<=qidx && qidx < count) ? zl->bidx_array[qidx] : ZERRIDX;
 }
 
-zl_addr_t zlist_get_elem_base(zlist_t *zl, zq_idx_t qidx)
+zaddr_t zlist_get_elem_base(zlist_t *zl, zqidx_t qidx)
 {
-    zl_bidx_t bidx = zlist_get_elem_bidx(zl, qidx);
+    zbidx_t bidx = zlist_get_elem_bidx(zl, qidx);
     if (bidx >= 0) {
         return ZLIST_ELEM_BASE(zl, bidx);
     }
     return 0;
 }
 
-zl_addr_t zlist_get_front_base(zlist_t *zl)
+zaddr_t zlist_get_front_base(zlist_t *zl)
 {
     return zlist_get_elem_base(zl, 0);
 }
 
-zl_addr_t zlist_get_back_base(zlist_t *zl)
+zaddr_t zlist_get_back_base(zlist_t *zl)
 {
     return zlist_get_elem_base(zl, zl->count - 1);
 }
 
-zl_addr_t zlist_set_elem_val(zlist_t *zl, zl_idx_t qidx, zl_addr_t elem_base)
+zaddr_t zlist_set_elem_val(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base)
 {
-    zl_addr_t base = zlist_get_elem_base(zl, qidx);
+    zaddr_t base = zlist_get_elem_base(zl, qidx);
     if (base && elem_base) {
         memcpy(base, elem_base, zl->elem_size);
         return base;
@@ -136,10 +136,10 @@ zl_addr_t zlist_set_elem_val(zlist_t *zl, zl_idx_t qidx, zl_addr_t elem_base)
     return 0;
 }
 
-zq_addr_t zlist_set_elem_val_itnl(zlist_t *zl, zl_idx_t dst_idx, zl_idx_t src_idx)
+zaddr_t zlist_set_elem_val_itnl(zlist_t *zl, zqidx_t dst_idx, zqidx_t src_idx)
 {
-    zl_addr_t dst_base = zlist_get_elem_base(zl, dst_idx);
-    zl_addr_t src_base = zlist_get_elem_base(zl, src_idx);
+    zaddr_t dst_base = zlist_get_elem_base(zl, dst_idx);
+    zaddr_t src_base = zlist_get_elem_base(zl, src_idx);
 
     if (dst_base && src_base) {
         memcpy(dst_base, src_base, zl->elem_size);
@@ -148,12 +148,12 @@ zq_addr_t zlist_set_elem_val_itnl(zlist_t *zl, zl_idx_t dst_idx, zl_idx_t src_id
     return 0;
 }
 
-zl_addr_t zlist_pop_elem(zlist_t *zl, zl_idx_t qidx)
+zaddr_t zlist_pop_elem(zlist_t *zl, zqidx_t qidx)
 {
-    zl_addr_t base = zlist_get_elem_base(zl, qidx);
+    zaddr_t base = zlist_get_elem_base(zl, qidx);
 
     if (base) {
-        zmem_swap_near_block(&zl->bidx_array[qidx], sizeof(zl_idx_t), 
+        zmem_swap_near_block(&zl->bidx_array[qidx], sizeof(zqidx_t), 
                               1, zl->count-qidx-1);
         zl->count -= 1;
     }
@@ -161,25 +161,25 @@ zl_addr_t zlist_pop_elem(zlist_t *zl, zl_idx_t qidx)
     return base;
 }
 
-zl_addr_t zlist_pop_front(zlist_t *zl)
+zaddr_t zlist_pop_front(zlist_t *zl)
 {
     return zlist_pop_elem(zl, 0);
 }
 
-zl_addr_t zlist_pop_back(zlist_t *zl)
+zaddr_t zlist_pop_back(zlist_t *zl)
 {
     return zlist_pop_elem(zl, zl->count - 1);
 }
 
-zl_addr_t zlist_insert_elem(zlist_t *zl, zl_idx_t qidx, zl_addr_t elem_base)
+zaddr_t zlist_insert_elem(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base)
 {
-    zl_addr_t  base  = 0;
-    zl_count_t count = zlist_get_count(zl);
-    zl_space_t space = zlist_get_space(zl);
+    zaddr_t  base  = 0;
+    zcount_t count = zlist_get_count(zl);
+    zspace_t space = zlist_get_space(zl);
 
     if (0<=qidx && qidx<=count && space>=1) 
     {
-        zmem_swap_near_block(&zl->bidx_array[qidx], sizeof(zl_idx_t), 
+        zmem_swap_near_block(&zl->bidx_array[qidx], sizeof(zqidx_t), 
                               zl->count-qidx, 1);
         zl->count += 1;
 
@@ -194,21 +194,21 @@ zl_addr_t zlist_insert_elem(zlist_t *zl, zl_idx_t qidx, zl_addr_t elem_base)
     return 0;
 }
 
-zl_addr_t zlist_push_back(zlist_t *zl, zl_addr_t elem_base)
+zaddr_t zlist_push_back(zlist_t *zl, zaddr_t elem_base)
 {
     return zlist_insert_elem(zl, zl->count, elem_base);
 }
 
-zl_count_t zlist_insert_null_elems(
-                    zlist_t *dst, zl_idx_t insert_before, 
-                    zl_count_t insert_count)
+zcount_t zlist_insert_null_elems(
+                    zlist_t *dst, zqidx_t insert_before, 
+                    zcount_t insert_count)
 {
-    zl_space_t dst_space = zlist_get_space(dst);
-    zl_count_t dst_count = zlist_get_count(dst);
+    zspace_t dst_space = zlist_get_space(dst);
+    zcount_t dst_count = zlist_get_count(dst);
 
     if (0<=insert_before && insert_before<=dst_count && dst_space>=insert_count) 
     {
-        zq_addr_t  dst_base  = &dst->bidx_array[insert_before];
+        zaddr_t  dst_base  = &dst->bidx_array[insert_before];
         zmem_swap_near_block(dst_base, dst->elem_size, 
                              dst->count - insert_before, 
                              insert_count);
@@ -219,16 +219,16 @@ zl_count_t zlist_insert_null_elems(
     return 0;
 }
 
-zl_count_t  zlist_delete_multi_elems(
-                    zlist_t *dst, zl_idx_t delete_from, 
-                    zl_count_t delete_count)
+zcount_t  zlist_delete_multi_elems(
+                    zlist_t *dst, zqidx_t delete_from, 
+                    zcount_t delete_count)
 {
-    zl_space_t dst_space = zlist_get_space(dst);
-    zl_count_t dst_count = zlist_get_count(dst);
+    zspace_t dst_space = zlist_get_space(dst);
+    zcount_t dst_count = zlist_get_count(dst);
 
     if (0<=delete_from && delete_from<=dst_count && dst_count>=delete_count) 
     {
-        zq_addr_t  dst_base  = &dst->bidx_array[delete_from];
+        zaddr_t  dst_base  = &dst->bidx_array[delete_from];
         zmem_swap_near_block(dst_base, dst->elem_size, 
             delete_count, 
             dst_count - delete_from - delete_count);
@@ -239,19 +239,19 @@ zl_count_t  zlist_delete_multi_elems(
     return 0;
 }
 
-zl_count_t zlist_insert_some_of_others(
-                    zlist_t *dst, zl_idx_t insert_at, 
-                    zlist_t *src, zl_idx_t src_start, 
-                    zl_count_t insert_count)
+zcount_t zlist_insert_some_of_others(
+                    zlist_t *dst, zqidx_t insert_at, 
+                    zlist_t *src, zqidx_t src_start, 
+                    zcount_t insert_count)
 {
-    zl_count_t real_insert = zlist_insert_null_elems(dst, insert_at, insert_count);
+    zcount_t real_insert = zlist_insert_null_elems(dst, insert_at, insert_count);
 
     if (real_insert > 0) {
         if (src) {
-            zq_idx_t   qidx;
+            zqidx_t   qidx;
             for (qidx=0; qidx<insert_count; ++qidx) {
-                zl_addr_t src_base = zlist_get_elem_base(src, src_start+qidx);
-                zl_addr_t dst_base = zlist_get_elem_base(dst, insert_at+qidx);
+                zaddr_t src_base = zlist_get_elem_base(src, src_start+qidx);
+                zaddr_t dst_base = zlist_get_elem_base(dst, insert_at+qidx);
 
                 if (dst_base && src_base) {
                     memcpy(dst_base, src_base, dst->elem_size);
@@ -263,28 +263,28 @@ zl_count_t zlist_insert_some_of_others(
     return real_insert;
 }
 
-zl_count_t zlist_push_back_some_of_others(zlist_t *dst, zlist_t *src, 
-                                 zl_idx_t src_start, 
-                                 zl_count_t merge_count)
+zcount_t zlist_push_back_some_of_others(zlist_t *dst, zlist_t *src, 
+                                        zqidx_t  src_start, 
+                                        zcount_t merge_count)
 {
     return zlist_insert_some_of_others(dst, zlist_get_count(dst), 
                               src, src_start, merge_count);
 }
 
-zl_count_t zlist_insert_all_of_others(zlist_t *dst, zl_idx_t insert_at, zlist_t *src)
+zcount_t zlist_insert_all_of_others(zlist_t *dst, zqidx_t insert_at, zlist_t *src)
 {
     return zlist_insert_some_of_others(dst, insert_at, 
                               src, 0, zlist_get_count(src));
 }
 
-zl_count_t zlist_push_back_all_of_others(zlist_t *dst, zlist_t *src)
+zcount_t zlist_push_back_all_of_others(zlist_t *dst, zlist_t *src)
 {
     return zlist_insert_some_of_others(dst, zlist_get_count(dst), 
                               src, 0, zlist_get_count(src));
 }
 
 static
-int32_t zlist_safe_cmp(zl_cmp_func_t func, zl_addr_t base1, zl_addr_t base2)
+int32_t zlist_safe_cmp(zl_cmp_func_t func, zaddr_t base1, zaddr_t base2)
 {
     if (base1 && base2) {
         return func(base1, base2);
@@ -298,63 +298,63 @@ int32_t zlist_safe_cmp(zl_cmp_func_t func, zl_addr_t base1, zl_addr_t base2)
 }
 
 static 
-zl_idx_t zlist_find_first_match_idx(zlist_t *zl, 
-                                    zl_addr_t elem_base, 
+zqidx_t  zlist_find_first_match_idx(zlist_t *zl, 
+                                    zaddr_t elem_base, 
                                     zl_cmp_func_t func)
 
 {
-    zl_idx_t qidx;
-    zl_count_t count = zlist_get_count(zl);
+    zqidx_t qidx;
+    zcount_t count = zlist_get_count(zl);
 
     for (qidx = 0; qidx < count; ++ qidx)
     {
-        zl_addr_t base = zlist_get_elem_base(zl, qidx);
+        zaddr_t base = zlist_get_elem_base(zl, qidx);
         if ( 0 == zlist_safe_cmp(func, base, elem_base) )
         {
             return qidx;
         }
     }
 
-    return ZL_ERR_IDX;
+    return ZERRIDX;
 }
 
-zl_addr_t zlist_find_first_match(zlist_t *zl, zl_addr_t cmp_base, zl_cmp_func_t func)
+zaddr_t zlist_find_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func)
 
 {
-    zl_idx_t qidx = zlist_find_first_match_idx(zl, cmp_base, func);
+    zqidx_t qidx = zlist_find_first_match_idx(zl, cmp_base, func);
     
     return zlist_get_elem_base(zl, qidx);
 }
 
-zl_addr_t zlist_pop_first_match(zlist_t *zl, zl_addr_t cmp_base, zl_cmp_func_t func)
+zaddr_t zlist_pop_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func)
 {
-    zl_idx_t qidx = zlist_find_first_match_idx(zl, cmp_base, func);
+    zqidx_t qidx = zlist_find_first_match_idx(zl, cmp_base, func);
 
     return zlist_pop_elem(zl, qidx);
 }
 
-int zlist_elem_cmp(zlist_t *zl, zl_cmp_func_t func, zl_idx_t qidx, zq_addr_t elem_base)
+int zlist_elem_cmp(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base)
 {
-    zl_addr_t base = zlist_get_elem_base(zl, qidx);
+    zaddr_t base = zlist_get_elem_base(zl, qidx);
 
     return zlist_safe_cmp(func, base, elem_base);
 }
 
-int zlist_elem_cmp_itnl(zlist_t *zl, zl_cmp_func_t func, zl_idx_t qidx_1, zl_idx_t qidx_2)
+int zlist_elem_cmp_itnl(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx_1, zqidx_t qidx_2)
 {
-    zl_addr_t base1 = zlist_get_elem_base(zl, qidx_1);
-    zl_addr_t base2 = zlist_get_elem_base(zl, qidx_2);
+    zaddr_t base1 = zlist_get_elem_base(zl, qidx_1);
+    zaddr_t base2 = zlist_get_elem_base(zl, qidx_2);
 
     return zlist_safe_cmp(func, base1, base2);
 }
 
 static
-void zlist_quick_sort_iter(zlist_t *zl, zl_cmp_func_t func, zl_idx_t start, zl_idx_t end)
+void zlist_quick_sort_iter(zlist_t *zl, zl_cmp_func_t func, zqidx_t start, zqidx_t end)
 {
-    zl_idx_t left = start;
-    zl_idx_t right = end;
-    zl_bidx_t threshold_bidx;
-    zl_addr_t threshold_base;
+    zqidx_t left = start;
+    zqidx_t right = end;
+    zbidx_t threshold_bidx;
+    zaddr_t threshold_base;
 
     if (start>=end) {
         return;
@@ -384,7 +384,7 @@ void zlist_quick_sort_iter(zlist_t *zl, zl_cmp_func_t func, zl_idx_t start, zl_i
 
 void zlist_quick_sort(zlist_t *zl, zl_cmp_func_t func)
 {
-    zl_count_t count = zlist_get_count(zl);
+    zcount_t count = zlist_get_count(zl);
     if (count > 2) {
         zlist_quick_sort_iter(zl, func, 0, count-1);
     }
@@ -399,10 +399,10 @@ void zlist_print_info(zlist_t *q, char *q_name)
         q->depth);
 }
 
-void zlist_print(char *q_name, zlist_t *q, zq_print_func_t func)
+void zlist_print(char *q_name, zlist_t *q, zl_print_func_t func)
 {
-    zq_idx_t qidx;
-    zq_count_t count = zlist_get_count(q);
+    zqidx_t qidx;
+    zcount_t count = zlist_get_count(q);
 
     zlist_print_info(q, q_name);
 
@@ -413,7 +413,7 @@ void zlist_print(char *q_name, zlist_t *q, zq_print_func_t func)
 
     for (qidx = 0; qidx < count; ++ qidx)
     {
-        zq_addr_t base = zlist_get_elem_base(q, qidx);
+        zaddr_t base = zlist_get_elem_base(q, qidx);
         func( qidx, base );
     }
 
@@ -427,13 +427,13 @@ void zlist_print(char *q_name, zlist_t *q, zq_print_func_t func)
 #define     SET_ITEM(qidx)         (item=qidx, &item)
 
 static
-int32_t cmp_func(zq_addr_t cmp_base, zq_addr_t elem_base)
+int32_t cmp_func(zaddr_t cmp_base, zaddr_t elem_base)
 {
     return DEREF_I32(cmp_base) - DEREF_I32(elem_base);
 }
 
 static
-void print_func(zq_idx_t idx, zq_addr_t elem_base)
+void print_func(zqidx_t idx, zaddr_t elem_base)
 {
     zlist_dbg("@zlist>> [%8d] : %d\n", idx, DEREF_I32(elem_base));
 }
@@ -441,7 +441,7 @@ void print_func(zq_idx_t idx, zq_addr_t elem_base)
 int main(int argc, char** argv)
 {
     int item, idx;
-    zq_addr_t ret, popped;
+    zaddr_t ret, popped;
 
     zlist_t *q1 = ZLIST_MALLOC(int, 10);
     zlist_t *q2 = ZLIST_MALLOC(int, 20);
