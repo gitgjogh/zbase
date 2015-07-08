@@ -462,7 +462,7 @@ typedef struct pet{
     int  age;
 }pet_t;
 
-int main(int argc, char **argv)
+int zopt_test(int argc, char **argv)
 {
     zopt_t *opt = zopt_malloc(8);
     zopt_node_t *node = 0;

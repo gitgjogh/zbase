@@ -438,7 +438,7 @@ void print_func(zqidx_t idx, zaddr_t elem_base)
     zlist_dbg("@zlist>> [%8d] : %d\n", idx, DEREF_I32(elem_base));
 }
 
-int main(int argc, char** argv)
+int zlist_test(int argc, char** argv)
 {
     int item, idx;
     zaddr_t ret, popped;

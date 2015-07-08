@@ -324,7 +324,7 @@ void print_func(zqidx_t idx, zaddr_t elem_base)
     zhash_dbg("@zstrq>> [%8d] : %s\n", idx, elem_base);
 }
 
-int main(int argc, char** argv)
+int zstrq_test(int argc, char** argv)
 {
     zsq_char_t *str;
     zstrq_t *q1 = zstrq_malloc(0);

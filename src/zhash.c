@@ -191,7 +191,7 @@ typedef struct zh_test_node_t {
     zsq_char_t *p_obj;
 }zh_test_node_t;
 
-int main(int argc, char** argv)
+int zhash_test(int argc, char** argv)
 {
     zhash_t *h = ZHASH_MALLOC(zh_test_node_t, 8);
     zh_test_node_t *node;

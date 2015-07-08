@@ -199,7 +199,7 @@ static void zlog_show(zlog_t *log, const char *prompt)
 
 #ifdef ZLOG_TEST
 
-int main(int argc, char** argv)
+int zlog_test(int argc, char** argv)
 {
     zlog_t *log = zlog_malloc(8);
     zlog_open(log);

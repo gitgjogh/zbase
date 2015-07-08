@@ -548,7 +548,7 @@ void print_func(zqidx_t idx, zaddr_t elem_base)
     zqueue_dbg("@queue>> [%8d] : %d\n", idx, DEREF_I32(elem_base));
 }
 
-int main(int argc, char** argv)
+int zqueue_test(int argc, char** argv)
 {
     int item, idx;
     zaddr_t ret, popped;

@@ -17,6 +17,7 @@
 #ifndef ZDEFS_H_
 #define ZDEFS_H_
 
+#include <stdarg.h>
 #ifndef WIN32
 #include <stdint.h>
 #endif
