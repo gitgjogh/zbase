@@ -15,11 +15,11 @@ CFLAGS += -DZHASH_TEST
 LIBS = -lm
 
 TMPDIR = mk.tmp
-LIBSRCS = zhash.c zlist.c zlog.c zopt.c zqueue.c zstrq.c zutils.c
+LIBSRCS = zhash.c zlist.c zopt.c zqueue.c zstrq.c zutils.c sim_opt.c
 LIBOBJS = $(LIBSRCS:%.c=$(TMPDIR)/%.o)
 OUTLIB = libzbase.a
 
-BINSRCS = sim_opt.c ztest.c 
+BINSRCS = ztest.c 
 BINOBJS = $(BINSRCS:%.c=$(TMPDIR)/%.o)
 OUTBIN = ztest
 

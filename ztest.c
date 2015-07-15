@@ -17,7 +17,6 @@
 #include <stdio.h>
 
 #include "zlist.h"
-#include "zlog.h"
 #include "zopt.h"
 #include "zqueue.h"
 #include "zstrq.h"
@@ -50,7 +49,6 @@ int main(int argc, char **argv)
     
     const static yuv_module_t sub_main[] = {
         {"list",   	zlist_test,    	""},
-        {"log",     zlog_test,    	""},
         {"opt",    	zopt_test,    	""},
         {"queue",  	zqueue_test,    ""},
         {"strq",  	zstrq_test,    	""},

@@ -20,7 +20,6 @@
 
 #include "zutils.h"
 #include "zhash.h"
-//#include "zlog.h"
 #include "zopt.h"
 
 #ifdef DEBUG
