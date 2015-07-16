@@ -32,7 +32,7 @@
 
 
 #ifndef MAX_PATH
-#define MAX_PATH    	(256)
+#define MAX_PATH        (256)
 #endif
 
 #ifndef ARRAY_SIZE
@@ -40,11 +40,11 @@
 #endif
 
 #ifndef MAX
-#define MAX(a,b) 		((a)>(b) ? (a) : (b))
+#define MAX(a,b)        ((a)>(b) ? (a) : (b))
 #endif
 
 #ifndef MIN
-#define MIN(a,b) 		((a)<(b) ? (a) : (b))
+#define MIN(a,b)        ((a)<(b) ? (a) : (b))
 #endif
 
 #ifndef CLIP
@@ -55,15 +55,15 @@
 #define IS_IN_RANGE(v, min, max) \
     (((min)<=(max)) && ((min)<=(v)) && ((max)>=(v)))
 
-#define IS_LTE()        				((uint8_t)((uint32_t)0x00000001))
-#define IS_BGE()        				((uint8_t)((uint32_t)0x01000000))
+#define IS_LTE()                        ((uint8_t)((uint32_t)0x00000001))
+#define IS_BGE()                        ((uint8_t)((uint32_t)0x01000000))
 void mem_put_lte16(uint8_t *mem, uint32_t val);
 void mem_put_lte32(uint8_t *mem, uint32_t val);
 
-#define WRAP_AROUND(depth, bidx)    	(((bidx)>=(depth)) ? ((bidx)-(depth)) : (bidx))
+#define WRAP_AROUND(depth, bidx)        (((bidx)>=(depth)) ? ((bidx)-(depth)) : (bidx))
 
 void mem_swap(void* base1, void* base2, uint32_t elem_size, uint32_t cnt);
-			   
+
 /** swap_near(,,7,2) : 0123456 78 -> 78 0123456 
  */
 void mem_swap_near_block(void* base, uint32_t elem_size, uint32_t cnt1, uint32_t cnt2);
@@ -96,8 +96,8 @@ int clip(int v, int minv, int maxv);
 
 int num_leading_zero_bits_u64(uint64_t val);
 int num_leading_zero_bits_u32(uint32_t val);
-#define NLZB32(val)     				(num_leading_zero_bits_u32(val))
-#define NLZB64(val)     				(num_leading_zero_bits_u64(val))
+#define NLZB32(val)                     (num_leading_zero_bits_u32(val))
+#define NLZB64(val)                     (num_leading_zero_bits_u64(val))
 
 char* get_uint32 (char *str, uint32_t *out);
 int jump_front(const char* str, const char* jumpset);

@@ -48,11 +48,11 @@ int main(int argc, char **argv)
     } yuv_module_t;
     
     const static yuv_module_t sub_main[] = {
-        {"list",   	zlist_test,    	""},
-        {"opt",    	zopt_test,    	""},
-        {"queue",  	zqueue_test,    ""},
-        {"strq",  	zstrq_test,    	""},
-        {"hash",   	zhash_test,    	""},
+        {"list",    zlist_test,     ""},
+        {"opt",     zopt_test,      ""},
+        {"queue",   zqueue_test,    ""},
+        {"strq",    zstrq_test,     ""},
+        {"hash",    zhash_test,     ""},
     };
 
     xlog_init(SLOG_DBG-1);

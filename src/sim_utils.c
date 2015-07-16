@@ -92,7 +92,7 @@ int clip(int v, int minv, int maxv)
 
 /**
  * simple atoi(/[0-9]+/) with the 1st non-digit pointer returned 
- * 	@see str_2_uint() which is more delicate 
+ *  @see str_2_uint() which is more delicate 
  */
 char* get_uint32 (char *str, uint32_t *out)
 {
