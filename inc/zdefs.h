@@ -17,18 +17,7 @@
 #ifndef ZDEFS_H_
 #define ZDEFS_H_
 
-#include <stdarg.h>
-#ifndef WIN32
-#include <stdint.h>
-#endif
-
-#ifndef     uint32_t
-#define     uint32_t        unsigned int
-#endif
-
-#ifndef     int32_t
-#define     int32_t         int
-#endif
+#include "sim_utils.h"
 
 typedef     void*           zaddr_t;
 typedef     void*           zfunc_t;
@@ -40,9 +29,7 @@ typedef     int32_t         zqidx_t;            //<! logic idx for queue/list/ar
 typedef     int32_t         zbidx_t;            //<! buffer idx
 #define     ZERRIDX         (-1) 
 
-typedef int (*zprintf_t)(const char *fmt, ...);
-typedef int (*zvprintf_t)(const char *fmt, va_list ap);
-typedef int (*zfprintf_t)(zfile_t f, const char *fmt, ...);
-typedef int (*zvfprintf_t)(zfile_t f, const char *fmt, va_list ap);
+#define zmem_swap               mem_swap
+#define zmem_swap_near_block    mem_swap_near_block
 
 #endif //#ifndef ZDEFS_H_

@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "zutils.h"
 #include "zhash.h"
 #include "zopt.h"
 

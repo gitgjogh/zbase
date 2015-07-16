@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "zutils.h"
 #include "zstrq.h"
 
 #ifdef DEBUG

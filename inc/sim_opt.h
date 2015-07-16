@@ -18,14 +18,7 @@
 #define __SIM_OPT_H__
 
 #include <stdarg.h>
-
-#ifndef max
-#define max(a,b) ((a)>(b) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b) ((a)<(b) ? (a) : (b))
-#endif
+#include "sim_utils.h"
 
 typedef enum slog_level {
     SLOG_NON        = 0,
@@ -78,6 +71,8 @@ int xerrv(const char *fmt, va_list ap);
 int xerr (const char *fmt, ...);
 int xdbgv(const char *fmt, va_list ap);
 int xdbg (const char *fmt, ...);
+int xwarnv(const char *fmt, va_list ap);
+int xwarn (const char *fmt, ...);
 
 static int fcall_layer = 0;
 #define ENTER_FUNC()  xlog(SLOG_FUNC, "@>>>> %-2d: %s(+)\n", fcall_layer++, __FUNCTION__)
@@ -86,9 +81,6 @@ static int fcall_layer = 0;
 #define SAFE_STR(s, nnstr)      ((s)?(s):(nnstr))
 
 
-#ifndef MAX_PATH
-#define MAX_PATH    256
-#endif
 #define MAX_MODE    8
 typedef struct file_io {
     int     b_used;
@@ -108,13 +100,18 @@ int     ios_feof(ios_t *p, int ich);
 
 #define GET_ARGV(idx, name) get_argv(argc, argv, idx, name);
 char*   get_argv(int argc, char *argv[], int i, const char *name);
-char*   get_uint32 (char *str, uint32_t *out);
 
+/**
+ *  \param [in] i The idx of curr param to be parsed. 
+ *  \return The idx of the next param to be parsed.
+ */
 int     arg_parse_range(int i, int argc, char *argv[], int i_range[2]);
 int     arg_parse_str(int i, int argc, char *argv[], char **p);
 int     arg_parse_strcpy(int i, int argc, char *argv[], char *buf, int nsz);
 int     arg_parse_int(int i, int argc, char *argv[], int *p);
 int     opt_parse_int(int i, int argc, char *argv[], int *p, int default_val);
+int     arg_parse_ints(int i, int argc, char *argv[], int n, int *p[]);
+int     opt_parse_ints(int i, int argc, char *argv[], int n, int *p[]);
 int     arg_parse_xlevel(int i, int argc, char *argv[]);
 
 
@@ -136,6 +133,13 @@ typedef struct opt_enum {
     int   val;
 } opt_enum_t;
 
+int ref_name_2_idx(int nref, const opt_ref_t *refs, const char *name);
+int ref_sval_2_idx(int nref, const opt_ref_t *refs, const char* val);
+int ref_ival_2_idx(int nref, const opt_ref_t *refs, int val);
+int enum_val_2_idx(int nenum, const opt_enum_t* enums, int val);
+int enum_name_2_idx(int nenum, const opt_enum_t* enums, const char *name);
+const char *enum_val_2_name(int nenum, const opt_enum_t* enums, int val);
+
 typedef struct option_description {
     char*   name;
     int     type;
@@ -147,8 +151,8 @@ typedef struct option_description {
     short   nref;
     short   nenum;
     union {
-        opt_ref_t*  refs;
-        opt_enum_t* enums;
+        const opt_ref_t* refs;
+        const opt_enum_t* enums;
     };
     
 //<! private:
@@ -160,9 +164,9 @@ typedef struct option_description {
 } opt_desc_t;
 
 int cmdl_set_ref(int optc, opt_desc_t optv[], 
-                const char *name, int n_ref, opt_ref_t *refs);
+                const char *name, int n_ref, const opt_ref_t *refs);
 int cmdl_set_enum(int optc, opt_desc_t optv[], 
-                const char *name, int n_enum, opt_enum_t *enums);
+                const char *name, int n_enum, const opt_enum_t *enums);
 
 int cmdl_getdesc_byref (int optc, opt_desc_t optv[], const char *name);
 int cmdl_getdesc_byname(int optc, opt_desc_t optv[], const char *name);
