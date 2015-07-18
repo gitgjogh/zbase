@@ -28,26 +28,28 @@ all : $(OUTLIB) $(OUTBIN)
 
 .PHONY: clean
 clean: 
-	@echo "cleaning ..."
+	@echo; echo "cleaning ..."
 	rm -rf $(TMPDIR)
 	rm -rf $(OUTLIB)
 	rm -rf $(OUTBIN)
 
 $(OUTLIB): $(LIBOBJS)
-	@echo "[AR] linking ..."
+	@echo; echo "[AR] linking ..."
 	rm -f $@
 	$(AR) -crs $@ $^
 	
 $(OUTBIN): $(BINOBJS) $(OUTLIB)
-	@echo "[LD] linking"
+	@echo; echo "[LD] linking"
 	cc -o $@ $^ -I../../ -I$(INCLUDES)
+    
+$(LIBOBJS) $(BINOBJS): $(INCDIRS)/*.h Makefile | $(TMPDIR)
 
-$(LIBOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
-	@echo "[CC] compiling: $< "
+$(LIBOBJS): $(TMPDIR)/%.o:%.c
+	@echo; echo "[CC] compiling: $< "
 	$(CC) $(CFLAGS) -o $@ $<
 
-$(BINOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
-	@echo "[CC] compiling: $< "
+$(BINOBJS): $(TMPDIR)/%.o:%.c
+	@echo; echo "[CC] compiling: $< "
 	$(CC) $(CFLAGS) -o $@ $<
 
 $(TMPDIR):
