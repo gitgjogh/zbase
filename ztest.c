@@ -23,18 +23,304 @@
 #include "zhash.h"
 
 #include "sim_opt.h"
-//#inlcude "sim_log.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a)   (sizeof(a)/sizeof(a[0]))
-#endif
 
-int zlist_test(int argc, char** argv);
-int zlog_test(int argc, char** argv);
-int zopt_test(int argc, char** argv);
-int zqueue_test(int argc, char** argv);
-int zstrq_test(int argc, char** argv);
-int zhash_test(int argc, char** argv);
+#define DEREF_I32(pi)           (*((int *)pi))
+#define SET_ITEM(qidx)          (item=qidx, &item)
+
+static
+int32_t int_cmpf(zaddr_t cmp_base, zaddr_t elem_base)
+{
+    return DEREF_I32(cmp_base) - DEREF_I32(elem_base);
+}
+
+static
+void int_printf(zqidx_t idx, zaddr_t elem_base)
+{
+    printf("[%d] : %d, \n", idx, DEREF_I32(elem_base));
+}
+
+static
+void str_printf(zqidx_t idx, zaddr_t elem_base)
+{
+    printf("[%d] : %s, \n", idx, elem_base);
+}
+
+int zlist_test(int argc, char** argv)
+{
+    int item, idx;
+    zaddr_t ret, popped;
+
+    zlist_t *q1 = ZLIST_MALLOC(int, 10);
+    zlist_t *q2 = ZLIST_MALLOC(int, 20);
+    for (idx=1; idx<8; ++idx) {
+        zlist_push_back(q1, SET_ITEM(10-idx));
+        zlist_push_back(q2, SET_ITEM(10+idx));
+    }
+    zlist_print("init with 1~7, size=10", q1, int_printf);
+
+    ret = zlist_push_back(q1, SET_ITEM(8));    printf("\n push %d %s \n\n", item, ret ? "success" : "fail");   
+    ret = zlist_push_back(q1, SET_ITEM(9));    printf("\n push %d %s \n\n", item, ret ? "success" : "fail");  
+    ret = zlist_push_back(q1, SET_ITEM(10));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+
+    zlist_print("push 8,9,10 ", q1, int_printf);
+
+    ret = zlist_push_back(q1, SET_ITEM(11));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+    ret = zlist_push_back(q1, SET_ITEM(12));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+
+    zlist_print("push 11,12", q1, int_printf);
+
+    popped = zlist_pop_front(q1);     
+    popped ? printf("\n pop front = %d \n\n", DEREF_I32(popped)) : printf("\n pop fail \n\n");
+
+    popped = zlist_pop_front(q1);     
+    popped ? printf("\n pop front = %d \n\n", DEREF_I32(popped)) : printf("\n pop fail \n\n");
+
+    zlist_print("pop front 2 items", q1, int_printf);
+
+    popped = zlist_pop_first_match(q1, SET_ITEM(7),  int_cmpf);     
+    printf("\n pop %d ", item);
+    popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
+    printf("\n\n");
+
+    zlist_print("pop first match 7", q1, int_printf);
+
+    popped = zlist_pop_first_match(q1, SET_ITEM(8),  int_cmpf);     
+    printf("\n pop %d ", item);
+    popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
+    printf("\n\n");
+
+    zlist_print("pop first match 8", q1, int_printf);
+
+    popped = zlist_pop_first_match(q1, SET_ITEM(11), int_cmpf);     
+    printf("\n pop %d ", item);
+    popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
+    printf("\n\n");
+
+    zlist_print("pop first match 11", q1, int_printf);
+
+    ret = zlist_insert_elem(q1, 0, SET_ITEM(11));     
+    printf("\n push front %d ", item);
+    ret ?  printf("= %d", DEREF_I32(ret)) : printf("fail");
+    printf("\n\n");
+
+    zlist_print("push 11 at front ", q1, int_printf);
+
+    zlist_quick_sort(q1, int_cmpf);
+    printf("\n\n");
+    zlist_print("quick sort", q1, int_printf);
+
+    zlist_print("q2 before cat", q2, int_printf);
+    zlist_insert_all_of_others(q2, 4, q1);
+    zlist_print("zlist_insert_list(q2, 4, q1)", q2, int_printf);
+
+    zlist_quick_sort(q2, int_cmpf);
+    printf("\n\n");
+    zlist_print("q2 quick sort", q2, int_printf);
+
+    zlist_free(q1);
+    zlist_free(q2);
+
+    return 0;
+}
+
+int zqueue_test(int argc, char** argv)
+{
+    int item, idx;
+    zaddr_t ret, popped;
+
+    zqueue_t *q = ZQUEUE_MALLOC(int, 10);
+    for(idx=1; idx<8; ++idx)
+        zqueue_push_back(q, &idx);
+    zqueue_print("init with 1~7, size=10", q, int_printf);
+
+    ret = zqueue_push_back(q, SET_ITEM(8));    printf("\n push %d %s \n\n", item, ret ? "success" : "fail");   
+    ret = zqueue_push_back(q, SET_ITEM(9));    printf("\n push %d %s \n\n", item, ret ? "success" : "fail");  
+    ret = zqueue_push_back(q, SET_ITEM(10));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+
+    zqueue_print("push 8,9,10 ", q, int_printf);
+
+    ret = zqueue_push_back(q, SET_ITEM(11));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+    ret = zqueue_push_back(q, SET_ITEM(12));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+
+    zqueue_print("push 11,12", q, int_printf);
+
+    popped = zqueue_pop_front(q);     
+    popped ? printf("\n pop front = %d \n\n", DEREF_I32(popped)) : printf("\n pop fail \n\n");
+
+    popped = zqueue_pop_front(q);     
+    popped ? printf("\n pop front = %d \n\n", DEREF_I32(popped)) : printf("\n pop fail \n\n");
+
+    zqueue_print("pop front 2 items", q, int_printf);
+
+    popped = zqueue_pop_first_match(q, SET_ITEM(7),  int_cmpf);     
+    printf("\n pop %d ", item);
+    popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
+    printf("\n\n");
+
+    zqueue_print("pop first match 7", q, int_printf);
+
+    popped = zqueue_pop_first_match(q, SET_ITEM(8),  int_cmpf);     
+    printf("\n pop %d ", item);
+    popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
+    printf("\n\n");
+
+    zqueue_print("pop first match 10", q, int_printf);
+
+    popped = zqueue_pop_first_match(q, SET_ITEM(11), int_cmpf);     
+    printf("\n pop %d ", item);
+    popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
+    printf("\n\n");
+
+    zqueue_print("pop first match 11", q, int_printf);
+
+    ret = zqueue_push_front(q, SET_ITEM(11));     
+    printf("\n push front %d ", item);
+    ret ?  printf("= %d", DEREF_I32(ret)) : printf("fail");
+    printf("\n\n");
+
+    zqueue_print("push 11 at front ", q, int_printf);
+
+    zqueue_quick_sort(q, int_cmpf);
+    printf("\n\n");
+    zqueue_print("quick sort", q, int_printf);
+
+    zqueue_free(q);
+
+    return 0;
+}
+
+
+int zstrq_test(int argc, char** argv)
+{
+    zsq_char_t *str;
+    zstrq_t *q1 = zstrq_malloc(0);
+    zstrq_t *q2 = zstrq_malloc(0);
+    
+    zstrq_push_back_v(q1, 10, 
+        "Don't","let","the","fear","for",
+        "losing","keep","you","from","trying.");
+
+    zstrq_push_back_list(q2, 
+        "(You only live once,)(but if you do it right,)(once  is enough.)",
+        " )(");
+
+    zstrq_print("q1", q1, str_printf);
+    zstrq_print("q2", q2, str_printf);
+
+    zstrq_push_back_all(q1, q2);
+    zstrq_print("q1", q1, str_printf);
+
+    str = zstrq_pop_back(q1, 0);
+    printf("poped = %s\n", str ? str : "[failed]");
+    zstrq_print("q1", q1, str_printf);
+
+    zstrq_free(q1);
+    zstrq_free(q2);
+
+    return 0;
+}
+
+typedef struct zh_test_node_t {
+    ZHASH_COMMON;
+    zsq_char_t *p_obj;
+}zh_test_node_t;
+
+int zhash_test(int argc, char** argv)
+{
+    zhash_t *h = ZHASH_MALLOC(zh_test_node_t, 8);
+    zh_test_node_t *node;
+    int b_found = 0;
+
+    zh_type_t type = zhash_reg_new_type(h);
+    node = zhash_touch_node(h, type, "HOME", 0, 1, 0);
+    if (node) {
+         node->p_obj = "/home/zjfeng";
+    }
+    node = zhash_touch_node(h, type, "LIB", 0, 1, 0);
+    if (node) {
+        node->p_obj  = "/user/share/lib";
+    }
+    node = zhash_touch_node(h, type, "BIN", 0, 1, 0);
+    if (node) {
+        node->p_obj = "/user/share/bin";
+    }
+
+    node = zhash_get_node(h, type, "LIB", 0);
+    if (node) {
+        printf("@zhash>> $LIB = %s\n", node->p_obj);
+    } else {
+        printf("@err>> get LIB fail\n");
+        goto main_err_exit;
+    }
+
+    node = zhash_get_node(h, type, "USER", 0);
+    if (node) {
+        printf("@zhash>> $USER = %s\n", node->p_obj);
+    } else {
+        printf("@err>> get $USER fail\n");
+        goto main_err_exit;
+    }
+
+main_err_exit:
+    zhash_free(h);
+
+    return 0;
+}
+
+
+typedef struct pet{
+    char *name;
+    char *color;
+    int  icolor;
+    int  age;
+}pet_t;
+
+int zopt_test(int argc, char **argv)
+{
+    zopt_t *opt = zopt_malloc(8);
+    zopt_node_t *node = 0;
+    pet_t dog = {"void", "void", 0};
+    pet_t cat = {"void", "void", 0};
+    int ret=0;
+
+    zopt_add_root(opt, "main", "");
+    zopt_add_node(opt, "help",   zopt_parse_help, 0,  "");
+
+    zopt_start_group(opt, "dog", "dog props");
+    zopt_add_node(opt, "name",   zopt_parse_str, &dog.name,  "");
+    zopt_add_node(opt, "color",  zopt_parse_str, &dog.color, "");
+    node = zopt_add_node(opt, "icolor", zopt_parse_enum, &dog.icolor, "");
+    zopt_create_enum(opt, node, "red=0,green,blue, yellow=6");
+    zopt_add_node(opt, "age",    zopt_parse_int, &dog.age,   "");
+    zopt_end_group(opt, "dog");
+
+    zopt_start_group(opt, "cat", "cat props");
+    zopt_add_node(opt, "name",   zopt_parse_str, &cat.name,  "");
+    zopt_add_node(opt, "color",  zopt_parse_str, &cat.color, "");
+    node = zopt_add_node(opt, "icolor", zopt_parse_enum, &cat.icolor, "");
+    zopt_create_enum(opt, node, "red=0,green,blue, yellow=6");
+    zopt_add_node(opt, "age",    zopt_parse_int, &cat.age,   "");
+    zopt_end_group(opt, "cat");
+
+    zopt_print_help(opt, zopt_get_root(opt));
+    ret = zopt_parse_argcv(opt, argc, argv);
+
+    if (ret<0) {
+        printf("@err>> parse error, ret = %d\n", ret);
+        return 1;
+    } else if (ret==0){
+        // help
+    } else{
+        printf("\n\ndog : %s, %s, %d, %d; cat : %s, %s, %d, %d\n", 
+            dog.name, dog.color, dog.icolor, dog.age,
+            cat.name, cat.color, cat.icolor, cat.age); 
+    }
+    zopt_free(opt);
+
+    return 0;
+}
+
 
 int main(int argc, char **argv)
 {

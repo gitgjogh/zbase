@@ -281,7 +281,7 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
     zqidx_t qidx;
     zcount_t count = zstrq_get_str_count(sq);
 
-    zhash_dbg("@zlist>> %s: buf_size=%d, count=%d, buf_used=%d+%d*4+4=%d, space=%d\n", 
+    zhash_dbg("@zstrq>> %s: buf_size=%d, count=%d, buf_used=%d+%d*4+4=%d, space=%d\n", 
         q_name, 
         sq->buf_size, 
         count,
@@ -292,7 +292,7 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
         );
 
     if (func==0) { 
-        zhash_dbg("@zlist>> Err: Invalid print function!\n");
+        zhash_dbg("@zstrq>> Err: Invalid print function!\n");
         return; 
     }
 
@@ -304,53 +304,3 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
 
     return;
 }
-
-
-#ifdef ZSTRQ_TEST
-
-#define     DEREF_I32(pi)       (*((int *)pi))
-#define     SET_ITEM(qidx)         (item=qidx, &item)
-
-static
-int32_t cmp_func(zaddr_t cmp_base, zaddr_t elem_base)
-{
-    return DEREF_I32(cmp_base) - DEREF_I32(elem_base);
-}
-
-static
-void print_func(zqidx_t idx, zaddr_t elem_base)
-{
-    zhash_dbg("@zstrq>> [%8d] : %s\n", idx, elem_base);
-}
-
-int zstrq_test(int argc, char** argv)
-{
-    zsq_char_t *str;
-    zstrq_t *q1 = zstrq_malloc(0);
-    zstrq_t *q2 = zstrq_malloc(0);
-    
-    zstrq_push_back_v(q1, 10, 
-        "Don't","let","the","fear","for",
-        "losing","keep","you","from","trying.");
-
-    zstrq_push_back_list(q2, 
-        "(You only live once,)(but if you do it right,)(once  is enough.)",
-        " )(");
-
-    zstrq_print("q1", q1, print_func);
-    zstrq_print("q2", q2, print_func);
-
-    zstrq_push_back_all(q1, q2);
-    zstrq_print("q1", q1, print_func);
-
-    str = zstrq_pop_back(q1, 0);
-    printf("poped = %s\n", str ? str : "[failed]");
-    zstrq_print("q1", q1, print_func);
-
-    zstrq_free(q1);
-    zstrq_free(q2);
-
-    return 0;
-}
-
-#endif  // ZSTRQ_TEST
