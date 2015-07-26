@@ -15,7 +15,7 @@ CFLAGS += -DZHASH_TEST
 LIBS = -lm
 
 TMPDIR = mk.tmp
-LIBSRCS = zhash.c zlist.c zopt.c zqueue.c zstrq.c sim_utils.c sim_opt.c
+LIBSRCS = zhash.c zlist.c zopt.c zqueue.c zstrq.c sim_log.c sim_utils.c sim_opt.c
 LIBOBJS = $(LIBSRCS:%.c=$(TMPDIR)/%.o)
 OUTLIB = libzbase.a
 
@@ -40,7 +40,7 @@ $(OUTLIB): $(LIBOBJS)
 	
 $(OUTBIN): $(BINOBJS) $(OUTLIB)
 	@echo; echo "[LD] linking"
-	cc -o $@ $^ -I../../ -I$(INCLUDES)
+	$(CC) -o $@ $^ -I../../ -I$(INCLUDES)
     
 $(LIBOBJS) $(BINOBJS): $(INCDIRS)/*.h Makefile | $(TMPDIR)
 

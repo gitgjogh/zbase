@@ -19,6 +19,7 @@
 #include <math.h>
 
 #include "sim_utils.h"
+#include "sim_log.h"
 
 
 int is_in_range(int min, int max, int v)
