@@ -493,7 +493,7 @@ void zqueue_quick_sort_u32(zqueue_t *q)
 }
 
 
-void zqueue_print_info(zqueue_t *q, char *q_name)
+void zqueue_print_info(zqueue_t *q, const char *q_name)
 {
     xprint("<zqueue> %s: count=%d, space=%d, depth=%d\n", 
         q_name, 
@@ -502,7 +502,8 @@ void zqueue_print_info(zqueue_t *q, char *q_name)
         q->depth);
 }
 
-void zqueue_print(char *q_name, zqueue_t *q, zq_print_func_t func)
+void zqueue_print(zqueue_t *q, const char *q_name, zq_print_func_t func,
+                const char *delimiters, const char *terminator)
 {
     zqidx_t qidx;
     zcount_t count = zqueue_get_count(q);
@@ -514,11 +515,14 @@ void zqueue_print(char *q_name, zqueue_t *q, zq_print_func_t func)
         return; 
     }
 
+    xprint(" [", q_name);
     for (qidx = 0; qidx < count; ++ qidx)
     {
         zaddr_t base = zqueue_get_elem_base(q, qidx);
         func( qidx, base );
+        xprint("%s", (qidx < count-1) ? delimiters : "");
     }
+    xprint("]%s", terminator);
 
     return;
 }

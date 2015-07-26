@@ -67,6 +67,7 @@ zcount_t    zstrq_push_back_list(zstrq_t *dst,
 
 
 typedef void  (*zsq_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
-void        zstrq_print(char *zl_name, zstrq_t *sq, zsq_print_func_t func);
+void        zstrq_print(zstrq_t *sq, char *sq_name, zsq_print_func_t func,
+                        const char *delimiters, const char *terminator);
 
 #endif //ZSTRQ_H_

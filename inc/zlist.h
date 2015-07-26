@@ -106,6 +106,7 @@ void        zlist_quick_sort_u32(zlist_t *zl);
 
 
 typedef void  (*zl_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
-void        zlist_print(char *zl_name, zlist_t *zl, zl_print_func_t func);
+void        zlist_print(zlist_t *zl, const char *zl_name, zl_print_func_t func,
+                    const char *delimiters, const char *terminator);
 
 #endif //ZLIST_H_

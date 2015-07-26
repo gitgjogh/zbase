@@ -384,32 +384,36 @@ void zlist_quick_sort(zlist_t *zl, zl_cmp_func_t func)
     }
 }
 
-void zlist_print_info(zlist_t *q, char *q_name)
+void zlist_print_info(zlist_t *zl, const char *zl_name)
 {
     xprint("<zlist> %s: count=%d, space=%d, depth=%d\n", 
-        q_name, 
-        zlist_get_count(q),
-        zlist_get_space(q),
-        q->depth);
+        zl_name, 
+        zlist_get_count(zl),
+        zlist_get_space(zl),
+        zl->depth);
 }
 
-void zlist_print(char *q_name, zlist_t *q, zl_print_func_t func)
+void zlist_print(zlist_t *zl, const char *zl_name, zl_print_func_t func,
+                const char *delimiters, const char *terminator)
 {
     zqidx_t qidx;
-    zcount_t count = zlist_get_count(q);
+    zcount_t count = zlist_get_count(zl);
 
-    zlist_print_info(q, q_name);
+    zlist_print_info(zl, zl_name);
 
     if (func==0) { 
         xerr("<zlist> Invalid print function!\n");
         return; 
     }
 
+    xprint(" [", zl_name);
     for (qidx = 0; qidx < count; ++ qidx)
     {
-        zaddr_t base = zlist_get_elem_base(q, qidx);
+        zaddr_t base = zlist_get_elem_base(zl, qidx);
         func( qidx, base );
+        xprint("%s", (qidx < count-1) ? delimiters : "");
     }
+    xprint("]%s", terminator);
 
     return;
 }

@@ -272,13 +272,14 @@ zcount_t zstrq_push_back_list(zstrq_t *dst,
 }
 
 
-void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
+void zstrq_print(zstrq_t *sq, char *sq_name, zsq_print_func_t func,
+                const char *delimiters, const char *terminator)
 {
     zqidx_t qidx;
     zcount_t count = zstrq_get_str_count(sq);
 
     xprint("<zstrq> %s: buf_size=%d, count=%d, buf_used=%d+%d*4+4=%d, space=%d\n", 
-        q_name, 
+        sq_name, 
         sq->buf_size, 
         count,
         sq->buf_used,
@@ -292,11 +293,14 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
         return; 
     }
 
+    xprint(" [", sq_name);
     for (qidx = 0; qidx < count; ++ qidx)
     {
         zaddr_t base = zstrq_get_str_base(sq, qidx);
         func( qidx, base );
+        xprint("%s", (qidx < count-1) ? delimiters : "");
     }
+    xprint("]%s", terminator);
 
     return;
 }

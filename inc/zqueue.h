@@ -105,8 +105,8 @@ void        zqueue_quick_sort_u32(zqueue_t *q);
 
 
 typedef void  (*zq_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
-void        zqueue_print(char *q_name, zqueue_t *q, zq_print_func_t func);
-
+void        zqueue_print(zqueue_t *q, const char *q_name, zq_print_func_t func,
+                    const char *delimiters, const char *terminator);
 
 /** iterators */
 typedef struct zqueue_iterator {
