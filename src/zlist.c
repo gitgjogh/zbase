@@ -19,13 +19,8 @@
 #include <string.h>
 
 #include "zlist.h"
+#include "sim_log.h"
 
-
-#ifdef DEBUG
-#define zlist_dbg printf
-#else
-#define zlist_dbg printf
-#endif
 
 zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth)
 {
@@ -35,7 +30,7 @@ zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth)
     zqidx_t qidx;
 
     if (!zl || !bidxq || !elemq) {
-        zlist_dbg("@err>> %s failed\n", __FUNCTION__);
+        xerr("<zlist>  %s failed\n", __FUNCTION__);
         if (bidxq) { free(bidxq); }
         if (elemq) { free(elemq); }
         if (zl) { free(zl); }
@@ -391,7 +386,7 @@ void zlist_quick_sort(zlist_t *zl, zl_cmp_func_t func)
 
 void zlist_print_info(zlist_t *q, char *q_name)
 {
-    zlist_dbg("@zlist>> %s: count=%d, space=%d, depth=%d\n", 
+    xprint("<zlist> %s: count=%d, space=%d, depth=%d\n", 
         q_name, 
         zlist_get_count(q),
         zlist_get_space(q),
@@ -406,7 +401,7 @@ void zlist_print(char *q_name, zlist_t *q, zl_print_func_t func)
     zlist_print_info(q, q_name);
 
     if (func==0) { 
-        zlist_dbg("@zlist>> Err: Invalid print function!\n");
+        xerr("<zlist> Invalid print function!\n");
         return; 
     }
 

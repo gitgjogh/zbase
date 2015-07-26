@@ -19,18 +19,14 @@
 #include <stdio.h>
 
 #include "zhash.h"
+#include "sim_log.h"
 
-#ifdef DEBUG
-#define zhash_dbg printf
-#else
-#define zhash_dbg printf
-#endif
 
 zhash_t *zhash_malloc(uint32_t node_size, uint32_t depth_log2)
 {
     zhash_t *zh = calloc( 1, sizeof(zhash_t) );
     if (!zh) {
-        zhash_dbg("@err>> %s failed\n", __FUNCTION__);
+        xerr("<zhash> obj malloc failed\n");
         return 0;
     }
 
@@ -43,7 +39,7 @@ zhash_t *zhash_malloc(uint32_t node_size, uint32_t depth_log2)
     zh->strq  = zstrq_malloc(0);
 
     if (!zh->hash_tbl || !zh->nodeq || !zh->strq) {
-        zhash_dbg("@err>> %s() 1 failed!\n", __FUNCTION__);
+        xerr("<zhash> buf malloc failed!\n");
         zhash_free(zh);
         return 0;
     }
@@ -125,14 +121,14 @@ zaddr_t     zhash_touch_node(zhash_t *h,
         zsq_char_t *saved_key = 0;
 
         if ( zqueue_get_space(h->nodeq) <= 0 ) {
-            printf("@err>> hash table overflow!\n");
+            xerr("<zhash> hash table overflow!\n");
             *p_found |= HASH_NODE_BUF_OF;
             return 0;
         } 
 
         saved_key = zstrq_push_back(h->strq, key, key_len);
         if ( saved_key == 0 ) {
-            printf("@err>> key buf overflow!\n");
+            xerr("<zhash> key buf overflow!\n");
             *p_found |= HASH_KEY_BUF_OF;
             return 0;
         }
@@ -152,7 +148,9 @@ zaddr_t     zhash_touch_node(zhash_t *h,
     return 0;
 }
 
-
+/**
+ *  @return first {node | ( @type==0 || @type==node->type ) && @key==node->key }
+ */
 zaddr_t     zhash_get_node(zhash_t *h, uint32_t type, 
                            const char *key, uint32_t keylen)
 {

@@ -77,11 +77,11 @@ int ios_open(ios_t ios[], int nch, int *nop)
             
             f->fp = fopen(f->path, f->mode);
             if ( f->fp ) {
-                xlog(SLOG_IOS, "@ios>> ch#%d 0x%08x=fopen(%s, %s)\n", 
+                xlog(SLOG_IOS, "<ios> ch#%d 0x%08x=fopen(%s, %s)\n", 
                                         ch, f->fp, f->path, f->mode);
                 ++ j;
             } else {
-                xerr("@ios>> error fopen(%s, %s)\n", f->path, f->mode);
+                xerr("<ios> error fopen(%s, %s)\n", f->path, f->mode);
                 ++ n_err;
             }
         }
@@ -96,7 +96,7 @@ int ios_close(ios_t *ios, int nch)
     for (ch=j=0; ch<nch; ++ch) {
         ios_t *f = &ios[ch];
         if (f->b_used && f->fp) {
-            xlog(SLOG_IOS, "@ios>> ch#%d fclose(0x%08x: %s)\n", ch, f->fp, f->path);
+            xlog(SLOG_IOS, "<ios> ch#%d fclose(0x%08x: %s)\n", ch, f->fp, f->path);
             fclose(f->fp);
             f->fp = 0;
             ++ j;
@@ -115,7 +115,7 @@ char *get_argv(int argc, char *argv[], int i, const char *name)
     int s = (argv && i<argc) ? argv[i][0] : 0;
     char *arg = (s != 0 && s != '-') ? argv[i] : 0;
     if (name) {
-        xlog(SLOG_CMDL, "@cmdl>> -%s[%d] = `%s`\n", SAFE_STR(name,""), i, SAFE_STR(arg,""));
+        xlog(SLOG_CMDL, "<cmdl> -%s[%d] = `%s`\n", SAFE_STR(name,""), i, SAFE_STR(arg,""));
     }
     return arg;
 }
@@ -141,14 +141,14 @@ int arg_parse_range(int i, int argc, char *argv[], int i_range[2])
 
     /* get `~$last` or `+$count` */
     if (*flag != '~' && *flag != '+') {
-        xerr("@cmdl>> Err : Invalid flag\n");
+        xerr("<cmdl> Err : Invalid flag\n");
         return -1;
     }
     
     //i_range[1] = strtoul (flag + 1, &last, 10);
     last = get_uint32 (flag + 1, &i_range[1]);
     if (last == 0 || *last != 0 ) {
-        xerr("@cmdl>> Err : Invalid count/end\n");
+        xerr("<cmdl> Err : Invalid count/end\n");
         i_range[1] = INT_MAX;
         return -1;
     }
@@ -474,7 +474,7 @@ int cmdl_parse_opt(int i, int argc, char *argv[], opt_desc_t *opt)
     char **arg_array = &argv[i];
     char  *arg = 0;
     
-    xlog(SLOG_DBG, "@cmdl>> -%s : cmdl_parse_opt(%d, %d, %s...)\n", 
+    xlog(SLOG_DBG, "<cmdl> -%s : cmdl_parse_opt(%d, %d, %s...)\n", 
             opt->name, i, argc, argv ? argv[i] : "?");
     
     if (argv == 0) {
@@ -482,7 +482,7 @@ int cmdl_parse_opt(int i, int argc, char *argv[], opt_desc_t *opt)
         arg = opt->default_val;
         arg_count = arg ? 1 : 0;
         arg_array = &arg;
-        xlog(SLOG_CMDL, "@cmdl>> use default_val `%s`\n", arg ? arg : "nil");
+        xlog(SLOG_CMDL, "<cmdl> use default_val `%s`\n", arg ? arg : "nil");
     } else {
         opt->b_default = 0;
         arg = get_argv(argc, argv, i, opt->name);
@@ -580,7 +580,7 @@ int cmdl_parse(int i, int argc, char *argv[], int optc, opt_desc_t optv[])
         {
             int i_opt = cmdl_getdesc_byref(optc, optv, &arg[2]);
             if (i_opt < 0) {
-                xlog(SLOG_CMDL, "@cmdl>> argv[%d] (%s) unrecognized\n", i, arg);
+                xlog(SLOG_CMDL, "<cmdl> argv[%d] (%s) unrecognized\n", i, arg);
                 return i;
             }
             ++ optv[i_opt].n_parse;
@@ -598,7 +598,7 @@ int cmdl_parse(int i, int argc, char *argv[], int optc, opt_desc_t optv[])
         {
             int i_opt = cmdl_getdesc_byname(optc, optv, &arg[1]);
             if (i_opt < 0) {
-                xlog(SLOG_CMDL, "@cmdl>> argv[%d] (%s) unrecognized\n", i, arg);
+                xlog(SLOG_CMDL, "<cmdl> argv[%d] (%s) unrecognized\n", i, arg);
                 return i;
             }
             
@@ -612,7 +612,7 @@ int cmdl_parse(int i, int argc, char *argv[], int optc, opt_desc_t optv[])
             }
             ++ i;
         } else {
-            xlog(SLOG_CMDL, "@cmdl>> argv[%d] (%s) is not opt\n", i, arg);
+            xlog(SLOG_CMDL, "<cmdl> argv[%d] (%s) is not opt\n", i, arg);
             return i;
         }
     }
@@ -670,12 +670,12 @@ int cmdl_check(int optc, opt_desc_t optv[])
         if (opt->n_parse > 0) {
             continue;
         }
-        //xlog("@cmdl>> -%-10s hasn't given at cmdl\n", &opt->name[1]);
+        //xlog("<cmdl> -%-10s hasn't given at cmdl\n", &opt->name[1]);
         if (opt->name[0] == '+') {
             xerr("%s not specified\n", &opt->name[1]);
             -- n_err;
         } else {
-            xlog(SLOG_CMDL, "@cmdl>> try default_val for -%s\n", &opt->name[1]);
+            xlog(SLOG_CMDL, "<cmdl> try default_val for -%s\n", &opt->name[1]);
             int r = cmdl_parse_opt(0, 0, 0, opt);
             if (r < 0) {
                 xerr("%s fail to use default_val\n", &opt->name[1]);

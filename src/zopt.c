@@ -20,12 +20,8 @@
 
 #include "zhash.h"
 #include "zopt.h"
+#include "sim_log.h"
 
-#ifdef DEBUG
-#define cmdl_zlog printf
-#else
-#define cmdl_zlog printf
-#endif
 
 zarg_iter_t zarg_iter(int argc, char **argv)
 {
@@ -77,7 +73,7 @@ zopt_t* zopt_malloc(uint32_t depth_log2)
 {
     zopt_t *ps = calloc( 1, sizeof(zopt_t) );
     if (!ps) {
-        cmdl_zlog("@err>> %s() failed!\n", __FUNCTION__);
+        xerr("<zopt> %s() failed!\n", __FUNCTION__);
         return 0;
     }
     
@@ -85,7 +81,7 @@ zopt_t* zopt_malloc(uint32_t depth_log2)
     ps->access_stack = ZQUEUE_MALLOC(zopt_node_t*, 32);
 
     if (!ps->h || !ps->access_stack) {
-        cmdl_zlog("@err>> %s() 1 failed!\n", __FUNCTION__);
+        xerr("<zopt> %s() 1 failed!\n", __FUNCTION__);
         zopt_free(ps);
         return 0;
     }
@@ -107,7 +103,7 @@ int zopt_print_help(zopt_t *opt, zopt_node_t *node)
     zqidx_t node_count = 1;
     zopt_node_t *sub = 0;
 
-    cmdl_zlog("    -%s : %s\n", node->key, node->help);
+    xprint("    -%s : %s\n", node->key, node->help);
     if (node->enum_type) {
         zopt_print_enum(opt, node);
     }
@@ -148,7 +144,7 @@ int zopt_parse_int(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
         *((int *)node->p_val) = atoi(arg);
         return zarg_next(iter);
     } else {
-        cmdl_zlog("@err>> no param for `-%s`\n", node->key);
+        xerr("<zopt> no param for `-%s`\n", node->key);
         *((int *)node->p_val) = 0;
         return zarg_err(iter);
     }
@@ -162,7 +158,7 @@ int zopt_parse_str(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
         *((char **)node->p_val) = arg;
         return zarg_next(iter);
     } else {
-        cmdl_zlog("@err>> no param for `-%s`\n", node->key);
+        xerr("<zopt> no param for `-%s`\n", node->key);
         *((char **)node->p_val) = 0;
         return zarg_err(iter);
     }
@@ -181,14 +177,14 @@ void zopt_print_enum(zopt_t *opt, zopt_node_t *node)
     if (node->enum_type) {
         zh_iter_t _iter = zhash_iter(opt->h), *iter = &_iter;
 
-        cmdl_zlog("\t\t");
+        xprint("\t\t");
         for (entry=zhash_front(iter); entry!=0; entry=zhash_next(iter))
         {
             if (entry->type == node->enum_type) {
-                cmdl_zlog("%s:%d,", entry->key, entry->enum_val);
+                xprint("%s:%d,", entry->key, entry->enum_val);
             }
         }
-        cmdl_zlog("\n");
+        xprint("\n");
     }
 }
 
@@ -202,11 +198,11 @@ int zopt_parse_enum(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
             *((int *)node->p_val) = entry->enum_val;
             return zarg_next(iter);
         } else {
-            cmdl_zlog("@err>> `%s` is not valid value for `-%s`\n", arg, node->key);
+            xerr("<zopt> `%s` is not valid value for `-%s`\n", arg, node->key);
             return zarg_err(iter);
         }
     } else {
-        cmdl_zlog("@err>> no param for `-%s`\n", node->key);
+        xerr("<zopt> no param for `-%s`\n", node->key);
         *((char **)node->p_val) = 0;
         return zarg_err(iter);
     }
@@ -246,7 +242,7 @@ int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc)
         // get 'int'
         str_len = get_token_pos(desc, " ,=", pos, &start);
         if (str_len<=0) {
-            cmdl_zlog("@err>> no value after `=`\n");
+            xerr("<zopt> no value after `=`\n");
 
             break;
         }
@@ -317,18 +313,18 @@ zaddr_t zopt_start_group(zopt_t *opt, const char *key, const char *help)
 
     father = zopt_get_father(opt);
     if (!father) {
-        cmdl_zlog("@err>> access statck empty\n");
+        xerr("<zopt> access statck empty\n");
         return 0;
     }
 
     node = zhash_touch_node(opt->h, father->sub_type, key, 0, 1, &b_found);
     if (!node) {
-        cmdl_zlog("@err>> hash node queue full\n");
+        xerr("<zopt> hash node queue full\n");
         return 0;
     }
 
     if ( !zqueue_push_back(opt->access_stack, &node) ) {
-        cmdl_zlog("@err>> hash node queue full\n");
+        xerr("<zopt> hash node queue full\n");
     }
 
     if (node) {
@@ -349,12 +345,12 @@ zaddr_t zopt_end_group(zopt_t *opt, const char   *key)
 
     father = zqueue_get_back_base(opt->access_stack);
     if (!father) {
-        cmdl_zlog("@err>> access statck empty\n");
+        xerr("<zopt> access statck empty\n");
         return 0;
     }
 
     if (key && strcmp(key, (*father)->key) != 0 ) {
-        cmdl_zlog("@err>> can't end non-last group\n");
+        xerr("<zopt> can't end non-last group\n");
         return 0;
     }
 
@@ -372,7 +368,7 @@ int zopt_parse_node(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
     if (!node->sub_type) {
         idx = (node->func)(opt, iter, node);
         if (idx < 0) {
-            cmdl_zlog("@err>> parse `-%s` err\n", node->key);
+            xerr("<zopt> parse `-%s` err\n", node->key);
             return zarg_err(iter);
         }
         if (idx == 0) {     /** help */
@@ -387,7 +383,7 @@ int zopt_parse_node(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
         if ( arg && strcmp(arg, "(")==0 ) {
             zarg_next(iter);
         } else {
-            cmdl_zlog("@err>> no openning for group\n");
+            xerr("<zopt> no openning for group\n");
             return zarg_err(iter);
         }
     }
@@ -403,13 +399,13 @@ int zopt_parse_node(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
 
         sub = zhash_get_node(opt->h, node->sub_type, arg, 0);
         if (!sub) {
-            cmdl_zlog("@err>> invalid `-%s`\n", arg);
+            xerr("<zopt> invalid `-%s`\n", arg);
             return zarg_err(iter);
         } 
 
         idx = zopt_parse_node(opt, iter, sub);
         if (idx < 0) {
-            cmdl_zlog("@err>> parse `-%s` err\n", node->key);
+            xerr("<zopt> parse `-%s` err\n", node->key);
             return zarg_err(iter);
         }
         if (idx == 0) {     /** help */
@@ -422,7 +418,7 @@ int zopt_parse_node(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
         if ( arg && strcmp(arg, ")")==0 ) {
             zarg_next(iter);
         } else {
-            cmdl_zlog("@err>> no ending for group\n");
+            xerr("<zopt> no ending for group\n");
             return zarg_err(iter);
         }
     } 
@@ -437,11 +433,11 @@ int zopt_parse_argcv(zopt_t *opt, int argc, char **argv)
 
     zopt_node_t **root = zqueue_get_front_base(opt->access_stack);
     if (!root) {
-        cmdl_zlog("@err>> no root in the aceess stack\n");
+        xerr("<zopt> no root in the aceess stack\n");
         return 0;
     }
     if (zqueue_get_count(opt->access_stack) != 1) {
-        cmdl_zlog("@warning>> too many ancestors in the aceess stack\n");
+        xwarn("<zopt> too many ancestors in the aceess stack\n");
     }
 
     zarg_jump_prog(&iter);   

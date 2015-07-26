@@ -446,7 +446,7 @@ int scan_for_float(const char *_str, float *ret_, const char **end_)
     }
     
 str2float_end:
-    //printf("int=%-10lld, frac=%lf, exp=%lf, ", 
+    //xdbg("scan_for_float: int=%-10lld, frac=%lf, exp=%lf, ", 
     //    r_int, r_frac / pow(10, n_frac), pow(10, r_exp));
 
     ret = (double)r_int + (double)r_frac / pow((double)10.0, (double)n_frac);

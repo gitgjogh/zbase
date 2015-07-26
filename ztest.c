@@ -37,13 +37,15 @@ int32_t int_cmpf(zaddr_t cmp_base, zaddr_t elem_base)
 static
 void int_printf(zqidx_t idx, zaddr_t elem_base)
 {
-    printf("[%d] : %d, \n", idx, DEREF_I32(elem_base));
+    //printf("[%d] : %d, ", idx, DEREF_I32(elem_base));
+    printf("%d, ", DEREF_I32(elem_base));
 }
 
 static
 void str_printf(zqidx_t idx, zaddr_t elem_base)
 {
-    printf("[%d] : %s, \n", idx, elem_base);
+    //printf("[%d] : %s, ", idx, elem_base);
+    printf("'%s' ", elem_base);
 }
 
 int zlist_test(int argc, char** argv)
@@ -59,48 +61,48 @@ int zlist_test(int argc, char** argv)
     }
     zlist_print("init with 1~7, size=10", q1, int_printf);
 
-    ret = zlist_push_back(q1, SET_ITEM(8));    printf("\n push %d %s \n\n", item, ret ? "success" : "fail");   
-    ret = zlist_push_back(q1, SET_ITEM(9));    printf("\n push %d %s \n\n", item, ret ? "success" : "fail");  
-    ret = zlist_push_back(q1, SET_ITEM(10));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+    ret = zlist_push_back(q1, SET_ITEM(8));    printf("push %d %s \n\n", item, ret ? "success" : "fail");   
+    ret = zlist_push_back(q1, SET_ITEM(9));    printf("push %d %s \n\n", item, ret ? "success" : "fail");  
+    ret = zlist_push_back(q1, SET_ITEM(10));   printf("push %d %s \n\n", item, ret ? "success" : "fail"); 
 
     zlist_print("push 8,9,10 ", q1, int_printf);
 
-    ret = zlist_push_back(q1, SET_ITEM(11));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
-    ret = zlist_push_back(q1, SET_ITEM(12));   printf("\n push %d %s \n\n", item, ret ? "success" : "fail"); 
+    ret = zlist_push_back(q1, SET_ITEM(11));   printf("push %d %s \n\n", item, ret ? "success" : "fail"); 
+    ret = zlist_push_back(q1, SET_ITEM(12));   printf("push %d %s \n\n", item, ret ? "success" : "fail"); 
 
     zlist_print("push 11,12", q1, int_printf);
 
     popped = zlist_pop_front(q1);     
-    popped ? printf("\n pop front = %d \n\n", DEREF_I32(popped)) : printf("\n pop fail \n\n");
+    popped ? printf("pop front = %d \n\n", DEREF_I32(popped)) : printf("pop fail \n\n");
 
     popped = zlist_pop_front(q1);     
-    popped ? printf("\n pop front = %d \n\n", DEREF_I32(popped)) : printf("\n pop fail \n\n");
+    popped ? printf("pop front = %d \n\n", DEREF_I32(popped)) : printf("pop fail \n\n");
 
     zlist_print("pop front 2 items", q1, int_printf);
 
     popped = zlist_pop_first_match(q1, SET_ITEM(7),  int_cmpf);     
-    printf("\n pop %d ", item);
+    printf("pop %d ", item);
     popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
     printf("\n\n");
 
     zlist_print("pop first match 7", q1, int_printf);
 
     popped = zlist_pop_first_match(q1, SET_ITEM(8),  int_cmpf);     
-    printf("\n pop %d ", item);
+    printf("pop %d ", item);
     popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
     printf("\n\n");
 
     zlist_print("pop first match 8", q1, int_printf);
 
     popped = zlist_pop_first_match(q1, SET_ITEM(11), int_cmpf);     
-    printf("\n pop %d ", item);
+    printf("pop %d ", item);
     popped ?  printf("= %d", DEREF_I32(popped)) : printf("fail");
     printf("\n\n");
 
     zlist_print("pop first match 11", q1, int_printf);
 
     ret = zlist_insert_elem(q1, 0, SET_ITEM(11));     
-    printf("\n push front %d ", item);
+    printf("push front %d ", item);
     ret ?  printf("= %d", DEREF_I32(ret)) : printf("fail");
     printf("\n\n");
 
@@ -205,15 +207,15 @@ int zstrq_test(int argc, char** argv)
         "(You only live once,)(but if you do it right,)(once  is enough.)",
         " )(");
 
-    zstrq_print("q1", q1, str_printf);
-    zstrq_print("q2", q2, str_printf);
+    zstrq_print("q1", q1, str_printf);  printf("\n\n");
+    zstrq_print("q2", q2, str_printf);  printf("\n\n");
 
     zstrq_push_back_all(q1, q2);
-    zstrq_print("q1", q1, str_printf);
+    zstrq_print("q1", q1, str_printf);  printf("\n\n");
 
     str = zstrq_pop_back(q1, 0);
-    printf("poped = %s\n", str ? str : "[failed]");
-    zstrq_print("q1", q1, str_printf);
+    printf("pop(q1) = %s\n", str ? str : "[failed]");
+    zstrq_print("q1", q1, str_printf);  printf("\n\n");
 
     zstrq_free(q1);
     zstrq_free(q2);

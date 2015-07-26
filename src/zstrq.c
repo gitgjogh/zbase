@@ -20,12 +20,8 @@
 #include <stdarg.h>
 
 #include "zstrq.h"
+#include "sim_log.h"
 
-#ifdef DEBUG
-#define zhash_dbg printf
-#else
-#define zhash_dbg printf
-#endif
 
 const static uint32_t g_zsq_page = (1<<16);
 const static uint32_t g_zsq_max_size = (1<<24);
@@ -35,7 +31,7 @@ zstrq_t* zstrq_malloc(uint32_t size)
 {
     zstrq_t *sq = calloc( 1, sizeof(zstrq_t) );
     if (!sq) {
-        zhash_dbg("@err>> %s() failed!\n", __FUNCTION__);
+        xerr("<zstrq> %s() failed!\n", __FUNCTION__);
         return 0;
     } 
 
@@ -47,7 +43,7 @@ zstrq_t* zstrq_malloc(uint32_t size)
         sq->buf_size = size;
         sq->ptr_array = (zsq_ptr_t *)(sq->str_buf+size) - 1;
     } else {
-        zhash_dbg("@zstrq>> warning: sizeof(str_buf)=0\n"); 
+        xwarn("<zstrq> sizeof(str_buf)=0\n"); 
         return sq;
     }
 
@@ -61,18 +57,18 @@ zstrq_t* zstrq_realloc(zstrq_t *sq, uint32_t new_size)
     zsq_ptr_t *new_ptr_array = 0;
 
     if (new_size > g_zsq_max_size) {
-        zhash_dbg("@err>> new_size exceed max allowed size\n");
+        xerr("<zstrq> realloc(): new_size exceed max allowed size\n");
         return sq;
     }
 
-    zhash_dbg("@zstrq>> zstrq_realloc(0x%x -> 0x%x)\n", sq->buf_size, new_size);
+    xdbg("<zstrq> realloc(0x%x -> 0x%x)\n", sq->buf_size, new_size);
 
     if ((int)new_size > sq->buf_size) 
     {
         zsq_char_t *old_buf = sq->str_buf;
         zsq_char_t *new_buf = realloc(old_buf, sizeof(zsq_char_t) * new_size);
         if (!new_buf) {
-            zhash_dbg("@err>> realloc str_buf failed\n");
+            xerr("<zstrq> realloc() str_buf failed\n");
             return sq;
         }
 
@@ -157,7 +153,7 @@ zaddr_t  zstrq_push_back(zstrq_t *sq, const zsq_char_t* str, uint32_t str_len)
     zsq_char_t *dst =0;
 
     if (!str) {
-        zhash_dbg("@err>> zstrq_push_back: null str\n");
+        xerr("<zstrq> null str\n");
         return 0;
     }
 
@@ -173,7 +169,7 @@ zaddr_t  zstrq_push_back(zstrq_t *sq, const zsq_char_t* str, uint32_t str_len)
         dst[i] = c;
     } 
     if (i>=space && c!=0) {
-        zhash_dbg("@err>> zstrq_push_back: str buf overflow\n");
+        xerr("<zstrq> str buf overflow\n");
         return 0;
     }
 
@@ -281,7 +277,7 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
     zqidx_t qidx;
     zcount_t count = zstrq_get_str_count(sq);
 
-    zhash_dbg("@zstrq>> %s: buf_size=%d, count=%d, buf_used=%d+%d*4+4=%d, space=%d\n", 
+    xprint("<zstrq> %s: buf_size=%d, count=%d, buf_used=%d+%d*4+4=%d, space=%d\n", 
         q_name, 
         sq->buf_size, 
         count,
@@ -292,7 +288,7 @@ void zstrq_print(char *q_name, zstrq_t *sq, zsq_print_func_t func)
         );
 
     if (func==0) { 
-        zhash_dbg("@zstrq>> Err: Invalid print function!\n");
+        xerr("<zstrq> print_func can't be null!\n");
         return; 
     }
 

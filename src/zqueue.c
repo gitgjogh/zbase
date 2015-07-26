@@ -19,13 +19,7 @@
 #include <string.h>
 
 #include "zqueue.h"
-
-
-#ifdef DEBUG
-    #define zqueue_dbg printf
-#else
-    #define zqueue_dbg printf
-#endif
+#include "sim_log.h"
 
 
 static zaddr_t  zqueue_get_elem_base_in_use(zqueue_t *q, zqidx_t qidx);
@@ -501,7 +495,7 @@ void zqueue_quick_sort_u32(zqueue_t *q)
 
 void zqueue_print_info(zqueue_t *q, char *q_name)
 {
-    zqueue_dbg("@queue>> %s: count=%d, space=%d, depth=%d\n", 
+    xprint("<zqueue> %s: count=%d, space=%d, depth=%d\n", 
         q_name, 
         zqueue_get_count(q),
         zqueue_get_space(q),
@@ -516,7 +510,7 @@ void zqueue_print(char *q_name, zqueue_t *q, zq_print_func_t func)
     zqueue_print_info(q, q_name);
 
     if (func==0) { 
-        zqueue_dbg("@queue>> Err: Invalid print function!\n");
+        xerr("<zqueue> Invalid print function!\n");
         return; 
     }
 
