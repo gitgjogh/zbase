@@ -20,14 +20,71 @@
 
 #ifndef WIN32
 #include <stdint.h>
+#include <limits.h>
 #endif
 
-#ifndef     uint32_t
-#define     uint32_t        unsigned int
+#ifndef uint8_t
+#define uint8_t         unsigned char
 #endif
 
-#ifndef     int32_t
-#define     int32_t         int
+#ifndef int8_t
+#define int8_t          char
+#endif
+
+#ifndef uint16_t
+#define uint16_t        unsigned short
+#endif
+
+#ifndef int16_t
+#define int16_t         short
+#endif
+
+#ifndef uint32_t
+#define uint32_t        unsigned int
+#endif
+
+#ifndef int32_t
+#define int32_t         int
+#endif
+
+#ifndef uint64_t
+#define uint64_t        unsigned long long
+#endif
+
+#ifndef int64_t
+#define int64_t         long long
+#endif
+
+#ifndef UINT8_MAX
+#define UINT8_MAX       UCHAR_MAX
+#endif
+
+#ifndef UINT16_MAX
+#define UINT16_MAX      USHRT_MAX
+#endif
+
+#ifndef UINT32_MAX
+#define UINT32_MAX      ULONG_MAX
+#endif
+
+#ifndef UINT64_MAX
+#define UINT64_MAX      ULLONG_MAX
+#endif
+
+#ifndef INT8_MAX
+#define INT8_MAX        CHAR_MAX
+#endif
+
+#ifndef INT16_MAX
+#define INT16_MAX       SHRT_MAX
+#endif
+
+#ifndef INT32_MAX
+#define INT32_MAX       LONG_MAX
+#endif
+
+#ifndef INT64_MAX
+#define INT64_MAX       LLONG_MAX
 #endif
 
 
