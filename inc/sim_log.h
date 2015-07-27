@@ -61,6 +61,8 @@ int xlog (int level, const char *prompt, const char *fmt, ...);
 #define xwarn(...)              xlog(SLOG_WARN, "warn", __VA_ARGS__)
 #define xdbg(...)               xlog(SLOG_DBG, "dbg", __VA_ARGS__)
 #define xprint(...)             xlog(SLOG_PRINT, 0, __VA_ARGS__)
+#define xlog_ios(...)           xlog(SLOG_IOS, "ios", __VA_ARGS__)
+#define xlog_cmdl(...)          xlog(SLOG_CMDL, "cmdl", __VA_ARGS__)
 
 
 static int fcall_layer = 0;
