@@ -21,13 +21,12 @@
 #include "zqueue.h"
 #include "zstrq.h"
 
-typedef     unsigned long   zh_hash_t;
+typedef     uint32_t        zh_hash_t;      /* type for hash value */
 typedef     int32_t         zh_type_t;
 
 #define ZHASH_COMMON  union {\
     struct {\
         struct zhash_node  *next;   \
-        struct zhash_node  *prev;   \
         zh_hash_t   hash;   \
         char       *key;    \
         zh_type_t   type;   \
@@ -55,10 +54,10 @@ typedef struct zhash
 }zhash_t;
 
 
-#define     HASH_FOUND          (1<<0)    
-#define     HASH_NODE_BUF_OF    (1<<1)
-#define     HASH_KEY_BUF_OF     (1<<2)
-#define     HASH_OBJ_BUF_OF     (1<<3)
+#define     ZHASH_FOUND                 (1<<0)    
+#define     ZHASH_NODE_BUF_OVERFLOW     (1<<1)
+#define     ZHASH_KEY_BUF_OVERFLOW      (1<<2)
+#define     ZHASH_OBJ_BUF_OVERFLOW      (1<<3)
 
 
 zhash_t*    zhash_malloc(uint32_t node_size, uint32_t depth_log2);

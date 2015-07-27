@@ -111,7 +111,7 @@ zaddr_t     zhash_touch_node(zhash_t *h,
         if (node->hash==hash && node->key[key_len]==0 
                 && strncmp(node->key, key, key_len)==0) 
         {
-            *p_found |= HASH_FOUND;
+            *p_found |= ZHASH_FOUND;
             return node;
         }
     }
@@ -122,14 +122,14 @@ zaddr_t     zhash_touch_node(zhash_t *h,
 
         if ( zqueue_get_space(h->nodeq) <= 0 ) {
             xerr("<zhash> hash table overflow!\n");
-            *p_found |= HASH_NODE_BUF_OF;
+            *p_found |= ZHASH_NODE_BUF_OVERFLOW;
             return 0;
         } 
 
         saved_key = zstrq_push_back(h->strq, key, key_len);
         if ( saved_key == 0 ) {
             xerr("<zhash> key buf overflow!\n");
-            *p_found |= HASH_KEY_BUF_OF;
+            *p_found |= ZHASH_KEY_BUF_OVERFLOW;
             return 0;
         }
         
