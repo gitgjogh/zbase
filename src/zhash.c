@@ -57,11 +57,6 @@ void zhash_free(zhash_t *h)
     }
 }
 
-zh_type_t   zhash_reg_new_type(zhash_t *h)
-{
-    return ++ h->next_type;
-}
-
 static 
 uint32_t zh_nstr_time33(uint32_t type, const char *key, uint32_t key_len)
 {
@@ -91,27 +86,24 @@ uint32_t zh_cstr_time33(uint32_t type, const char *key, uint32_t *key_len)
     return hash; 
 }
 
-zaddr_t     zhash_touch_node(zhash_t *h, 
-                            uint32_t type, 
-                            const char *key, 
-                            uint32_t key_len,
-                            int b_insert, 
-                            int *b_found)
+
+static
+zaddr_t     zhash_touch_node(zhash_t    *h, 
+                            const char  *key, 
+                            uint32_t     key_len,
+                            int          b_insert)
 {
-    uint32_t hash = key_len ? zh_nstr_time33(type, key, key_len)
-                            : zh_cstr_time33(type, key, &key_len);
+    uint32_t hash = key_len ? zh_nstr_time33(0, key, key_len)
+                            : zh_cstr_time33(0, key, &key_len);
 
-    zh_node_t *head = h->hash_tbl[hash % h->depth];
-
+    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
     zh_node_t *node = 0;
-    int _found, *p_found = b_found ? b_found :&_found;
-
-    for (*p_found = 0, node = head; node; node = node->next) 
+    for (h->ret_flag = 0, node = head; node; node = node->next) 
     {
         if (node->hash==hash && node->key[key_len]==0 
                 && strncmp(node->key, key, key_len)==0) 
         {
-            *p_found |= ZHASH_FOUND;
+            h->ret_flag |= ZHASH_FOUND;
             return node;
         }
     }
@@ -122,25 +114,24 @@ zaddr_t     zhash_touch_node(zhash_t *h,
 
         if ( zqueue_get_space(h->nodeq) <= 0 ) {
             xerr("<zhash> hash table overflow!\n");
-            *p_found |= ZHASH_NODE_BUF_OVERFLOW;
+            h->ret_flag |= ZHASH_NODE_BUF_OVERFLOW;
             return 0;
         } 
 
         saved_key = zstrq_push_back(h->strq, key, key_len);
         if ( saved_key == 0 ) {
             xerr("<zhash> key buf overflow!\n");
-            *p_found |= ZHASH_KEY_BUF_OVERFLOW;
+            h->ret_flag |= ZHASH_KEY_BUF_OVERFLOW;
             return 0;
         }
         
         node = zqueue_push_back(h->nodeq, 0);
-        node->type = type;
         node->hash = hash;
         node->key  = saved_key;
 
         /* insert to front */
         node->next = head ? head->next : 0;
-        h->hash_tbl[hash % h->depth] = node;
+        h->hash_tbl[GETLSBS(hash, h->depth_log2)] = node;
 
         return node;
     }
@@ -148,14 +139,22 @@ zaddr_t     zhash_touch_node(zhash_t *h,
     return 0;
 }
 
-/**
- *  @return first {node | ( @type==0 || @type==node->type ) && @key==node->key }
- */
-zaddr_t     zhash_get_node(zhash_t *h, uint32_t type, 
-                           const char *key, uint32_t keylen)
+zaddr_t     zhash_get_node(zhash_t *h, const char *key, uint32_t keylen)
 {
-    return zhash_touch_node(h, type, key, keylen, 0, 0);
+    return zhash_touch_node(h, key, keylen, 0);
 }
+
+zaddr_t     zhash_set_node(zhash_t *h, const char *key, uint32_t keylen)
+{
+    return zhash_touch_node(h, key, keylen, 1);
+}
+
+int         zhash_ret_flag(zhash_t *h)
+{
+    return h->ret_flag;
+}
+
+
 
 zh_iter_t   zhash_iter(zhash_t *h)
 {
@@ -167,14 +166,14 @@ zaddr_t zhash_front(zh_iter_t *iter)
 {
     return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=0);
 }
-zaddr_t zhash_next(zh_iter_t *iter)  
-{ 
-    return zqueue_get_elem_base(iter->h->nodeq, ++ iter->iter_idx);
-}
 zaddr_t zhash_back(zh_iter_t *iter)  
 { 
     zcount_t count = zqueue_get_count(iter->h->nodeq);
     return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=count-1);
+}
+zaddr_t zhash_next(zh_iter_t *iter)  
+{ 
+    return zqueue_get_elem_base(iter->h->nodeq, ++ iter->iter_idx);
 }
 zaddr_t zhash_prev(zh_iter_t *iter)  
 { 

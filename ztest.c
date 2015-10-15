@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 #include "zlist.h"
-#include "zopt.h"
+//#include "zopt.h"
 #include "zqueue.h"
 #include "zstrq.h"
 #include "zhash.h"
@@ -197,7 +197,7 @@ int zstrq_test(int argc, char** argv)
 }
 
 typedef struct zh_test_node_t {
-    ZHASH_COMMON;
+    ZH_NODE_COMMON;
     zsq_char_t *p_obj;
 }zh_test_node_t;
 
@@ -207,33 +207,32 @@ int zhash_test(int argc, char** argv)
     zh_test_node_t *node;
     int b_found = 0;
 
-    zh_type_t type = zhash_reg_new_type(h);
-    node = zhash_touch_node(h, type, "HOME", 0, 1, 0);
+    node = zhash_set_node(h, "HOME", 0);
     if (node) {
          node->p_obj = "/home/zjfeng";
     }
-    node = zhash_touch_node(h, type, "LIB", 0, 1, 0);
+    node = zhash_set_node(h, "LIB", 0);
     if (node) {
         node->p_obj  = "/user/share/lib";
     }
-    node = zhash_touch_node(h, type, "BIN", 0, 1, 0);
+    node = zhash_set_node(h, "BIN", 0);
     if (node) {
         node->p_obj = "/user/share/bin";
     }
 
-    node = zhash_get_node(h, type, "LIB", 0);
+    node = zhash_get_node(h, "LIB", 0);
     if (node) {
-        printf("@zhash>> $LIB = %s\n", node->p_obj);
+        xprint("<zhash> $LIB = %s\n", node->p_obj);
     } else {
-        printf("@err>> get LIB fail\n");
+        xprint("<zhash> get LIB fail\n");
         goto main_err_exit;
     }
 
-    node = zhash_get_node(h, type, "USER", 0);
+    node = zhash_get_node(h, "USER", 0);
     if (node) {
-        printf("@zhash>> $USER = %s\n", node->p_obj);
+        xprint("<zhash> $USER = %s\n", node->p_obj);
     } else {
-        printf("@err>> get $USER fail\n");
+        xprint("<zhash> get $USER fail\n");
         goto main_err_exit;
     }
 
@@ -251,6 +250,7 @@ typedef struct pet{
     int  age;
 }pet_t;
 
+/*
 int zopt_test(int argc, char **argv)
 {
     zopt_t *opt = zopt_malloc(8);
@@ -295,6 +295,7 @@ int zopt_test(int argc, char **argv)
 
     return 0;
 }
+*/
 
 
 int main(int argc, char **argv)
@@ -310,7 +311,7 @@ int main(int argc, char **argv)
     
     const static yuv_module_t sub_main[] = {
         {"list",    zlist_test,     ""},
-        {"opt",     zopt_test,      ""},
+        //{"opt",     zopt_test,      ""},
         {"queue",   zqueue_test,    ""},
         {"strq",    zstrq_test,     ""},
         {"hash",    zhash_test,     ""},

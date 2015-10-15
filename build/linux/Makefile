@@ -9,7 +9,7 @@ CFLAGS = -c -O3 -I$(INCLUDES)
 LIBS = -lm
 
 TMPDIR = mk.tmp
-LIBSRCS = zhash.c zlist.c zopt.c zqueue.c zstrq.c sim_log.c sim_utils.c sim_opt.c
+LIBSRCS = zhash.c zlist.c zqueue.c zstrq.c sim_log.c sim_utils.c sim_opt.c
 LIBOBJS = $(LIBSRCS:%.c=$(TMPDIR)/%.o)
 OUTLIB = libzbase.a
 
