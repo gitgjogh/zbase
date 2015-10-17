@@ -44,8 +44,31 @@ zcount_t    zqueue_get_count(zqueue_t *q);
 zspace_t    zqueue_get_space(zqueue_t *q);
 
 
-#define     ZQUEUE_ELEM_BASE(q, bidx)       (((char *)q->elem_array) + (bidx) * q->elem_size)
-zaddr_t     zqueue_get_elem_base(zqueue_t *q, zqidx_t qidx);       //<! 0<= qidx < count
+#define     ZQUEUE_ELEM_BASE(q, bidx) \
+        (((char *)q->elem_array) + (bidx) * q->elem_size)
+zaddr_t     zqueue_qidx_2_base_in_buf(zqueue_t *q, zqidx_t qidx);
+zaddr_t     zqueue_qidx_2_base_in_use(zqueue_t *q, zqidx_t qidx);
+int         zqueue_is_qdix_in_buf(zqueue_t *q, zqidx_t qidx);
+int         zqueue_is_qdix_in_use(zqueue_t *q, zqidx_t qidx);
+
+/**
+ * @param elem_base must be elem_size alignment
+ */
+zqidx_t     zqueue_base_2_qidx_in_buf(zqueue_t *q, zaddr_t elem_base);
+zqidx_t     zqueue_base_2_qidx_in_use(zqueue_t *q, zaddr_t elem_base);
+int         zqueue_is_elem_base_in_buf(zqueue_t *q, zaddr_t elem_base);
+int         zqueue_is_elem_base_in_use(zqueue_t *q, zaddr_t elem_base);
+
+/**
+ * @param addr no need to be elem_size alignment
+ */
+zqidx_t     zqueue_addr_2_qidx_in_buf(zqueue_t *q, zaddr_t addr);
+zqidx_t     zqueue_addr_2_qidx_in_use(zqueue_t *q, zaddr_t addr);
+int         zqueue_is_addr_in_buf(zqueue_t *q, zaddr_t addr);
+int         zqueue_is_addr_in_use(zqueue_t *q, zaddr_t addr);
+
+
+#define     zqueue_get_elem_base        zqueue_qidx_2_base_in_use
 zaddr_t     zqueue_get_front_base(zqueue_t *q);        //<! @ret q[0]
 zaddr_t     zqueue_get_back_base(zqueue_t *q);         //<! @ret q[count-1]
 zaddr_t     zqueue_get_last_base(zqueue_t *q);         //<! @ret q[count]

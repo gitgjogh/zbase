@@ -22,8 +22,6 @@
 #include "sim_log.h"
 
 
-static zaddr_t  zqueue_get_elem_base_in_use(zqueue_t *q, zqidx_t qidx);
-static zaddr_t  zqueue_get_elem_base_in_buf(zqueue_t *q, zqidx_t qidx);
 static zaddr_t  zqueue_elem_2_swap(zqueue_t *q, zqidx_t qidx);
 static zaddr_t  zqueue_swap_2_elem(zqueue_t *q, zqidx_t qidx);
 static int32_t  zqueue_safe_cmp(zq_cmp_func_t func, zaddr_t base1, zaddr_t base2);
@@ -99,36 +97,89 @@ zspace_t zqueue_get_space(zqueue_t *q)
     return q->depth - q->count;
 }
 
-static 
-zaddr_t zqueue_get_elem_base_in_use(zqueue_t *q, zqidx_t qidx)
+zaddr_t zqueue_qidx_2_base_in_use(zqueue_t *q, zqidx_t qidx)
 {
-    return (0<=qidx && qidx < q->count) ? ZQUEUE_ELEM_BASE(q, qidx) : 0;
+    return zqueue_is_qdix_in_use(q, qidx) ? ZQUEUE_ELEM_BASE(q, qidx) : 0;
 }
 
-static 
-zaddr_t zqueue_get_elem_base_in_buf(zqueue_t *q, zqidx_t qidx)
+zaddr_t zqueue_qidx_2_base_in_buf(zqueue_t *q, zqidx_t qidx)
 {
-    return (0<=qidx && qidx < q->depth) ? ZQUEUE_ELEM_BASE(q, qidx) : 0;
+    return zqueue_is_qdix_in_buf(q, qidx) ? ZQUEUE_ELEM_BASE(q, qidx) : 0;
 }
 
-zaddr_t zqueue_get_elem_base(zqueue_t *q, zqidx_t qidx)
+int zqueue_is_qdix_in_buf(zqueue_t *q, zqidx_t qidx)
 {
-    return zqueue_get_elem_base_in_use(q, qidx);
+    return (0<=qidx && qidx < q->depth);
+}
+
+int zqueue_is_qdix_in_use(zqueue_t *q, zqidx_t qidx)
+{
+    return (0<=qidx && qidx < q->count);
+}
+
+#define     ZQUEUE_NEAREST_BIDX(q, addr) \
+        ((((char *)(addr))-((char *)(q->elem_array))) / (q->elem_size))
+
+zqidx_t zqueue_base_2_qidx_in_buf(zqueue_t *q, zaddr_t elem_base)
+{
+    if (zqueue_is_addr_in_buf(q, elem_base)) {
+        zbidx_t bidx  = ZQUEUE_NEAREST_BIDX(q, elem_base);
+        if (ZQUEUE_ELEM_BASE(q, bidx) == elem_base) {
+            return bidx;
+        }
+    }
+    return -1;
+}
+
+zqidx_t zqueue_base_2_qidx_in_use(zqueue_t *q, zaddr_t elem_base)
+{
+    zbidx_t qidx = zqueue_base_2_qidx_in_buf(q, elem_base);
+    return zqueue_is_qdix_in_use(q, qidx) ? qidx : -1;
+}
+
+zqidx_t zqueue_addr_2_qidx_in_buf(zqueue_t *q, zaddr_t addr)
+{
+    return zqueue_is_addr_in_buf(q, addr) ? ZQUEUE_NEAREST_BIDX(q, addr) : -1;
+}
+
+zqidx_t zqueue_addr_2_qidx_in_use(zqueue_t *q, zaddr_t addr)
+{
+    return zqueue_is_addr_in_use(q, addr) ? ZQUEUE_NEAREST_BIDX(q, addr) : -1;
+}
+
+int zqueue_is_addr_in_buf(zqueue_t *q, zaddr_t addr)
+{
+    return (q->elem_array <= addr && addr < ZQUEUE_ELEM_BASE(q, q->depth));
+}
+
+int zqueue_is_addr_in_use(zqueue_t *q, zaddr_t addr)
+{
+    return (q->elem_array <= addr && addr < ZQUEUE_ELEM_BASE(q, q->count));
+}
+
+int zqueue_is_elem_base_in_buf(zqueue_t *q, zaddr_t elem_base)
+{
+    return zqueue_base_2_qidx_in_buf(q, elem_base) >= 0;
+}
+
+int zqueue_is_elem_base_in_use(zqueue_t *q, zaddr_t elem_base)
+{
+    return zqueue_base_2_qidx_in_use(q, elem_base) >= 0;
 }
 
 zaddr_t zqueue_get_front_base(zqueue_t *q)
 {
-    return zqueue_get_elem_base_in_use(q, 0);
+    return zqueue_qidx_2_base_in_use(q, 0);
 }
 
 zaddr_t zqueue_get_back_base(zqueue_t *q)
 {
-    return zqueue_get_elem_base_in_use(q, q->count - 1);
+    return zqueue_qidx_2_base_in_use(q, q->count - 1);
 }
 
 zaddr_t zqueue_get_last_base(zqueue_t *q)
 {
-    return zqueue_get_elem_base_in_buf(q, q->count);
+    return zqueue_qidx_2_base_in_buf(q, q->count);
 }
 
 zq_iter_t   zqueue_iter(zqueue_t *q)
@@ -162,7 +213,7 @@ zaddr_t zqueue_pop_elem(zqueue_t *q, zqidx_t qidx)
         zmem_swap_near_block(base, q->elem_size, 1, q->count-qidx-1);
         q->count -= 1;
 
-        return zqueue_get_elem_base_in_buf(q, q->count);
+        return zqueue_qidx_2_base_in_buf(q, q->count);
     }
 
     return 0;
@@ -185,7 +236,7 @@ zaddr_t zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base)
 
     if (0<=qidx && qidx<=count && space>=1)  
     {
-        zaddr_t  base  = zqueue_get_elem_base_in_buf(q, qidx);
+        zaddr_t  base  = zqueue_qidx_2_base_in_buf(q, qidx);
         zmem_swap_near_block(base, q->elem_size, q->count-qidx, 1);
         q->count += 1;
 
@@ -218,7 +269,7 @@ zcount_t zqueue_insert_null_elems(
     
     if (0<=insert_before && insert_before<=dst_count && dst_space>=insert_count) 
     {
-        zaddr_t  dst_base  = zqueue_get_elem_base_in_buf(dst, insert_before);
+        zaddr_t  dst_base  = zqueue_qidx_2_base_in_buf(dst, insert_before);
         zmem_swap_near_block(dst_base, dst->elem_size, 
                              dst->count - insert_before, 
                              insert_count);
@@ -235,7 +286,7 @@ zcount_t  zqueue_delete_multi_elems(
 {
     zspace_t dst_space = zqueue_get_space(dst);
     zcount_t dst_count = zqueue_get_count(dst);
-    zaddr_t  dst_base  = zqueue_get_elem_base_in_use(dst, delete_from);
+    zaddr_t  dst_base  = zqueue_qidx_2_base_in_use(dst, delete_from);
 
     if (dst_base && dst_count>=delete_count) 
     {
