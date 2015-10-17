@@ -22,16 +22,34 @@
 #include "sim_log.h"
 
 
+#define     ZLIST_NEAREST_BIDX(q, addr) \
+        ((((char *)(addr))-((char *)(q->elem_array))) / (q->elem_size))
+
+static zbidx_t  zlist_qidx_2_bidx_in_buf(zlist_t *zl, zqidx_t qidx);
+static zbidx_t  zlist_qidx_2_bidx_in_use(zlist_t *zl, zqidx_t qidx);
+static zqidx_t  zlist_bidx_2_qidx_in_buf(zlist_t *zl, zbidx_t bidx);
+static zqidx_t  zlist_bidx_2_qidx_in_use(zlist_t *zl, zbidx_t bidx);
+static int      zlist_is_bidx_in_buf(zlist_t *zl, zqidx_t bidx);
+static int      zlist_is_bidx_in_use(zlist_t *zl, zqidx_t bidx);
+static zaddr_t  zlist_bidx_2_base_in_buf(zlist_t *zl, zbidx_t bidx);
+static zaddr_t  zlist_bidx_2_base_in_use(zlist_t *zl, zbidx_t bidx);
+static zqidx_t  zlist_base_2_bidx_in_buf(zlist_t *zl, zaddr_t elem_base);
+static zqidx_t  zlist_base_2_bidx_in_use(zlist_t *zl, zaddr_t elem_base);
+static zqidx_t  zlist_addr_2_bidx_in_buf(zlist_t *zl, zaddr_t addr);
+static zqidx_t  zlist_addr_2_bidx_in_use(zlist_t *zl, zaddr_t addr);
+#define         zlist_get_elem_bidx     zlist_qidx_2_bidx_in_use
+
+
 zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth)
 {
     zlist_t *zl = malloc(sizeof(zlist_t));
-    zbidx_t *bidxq = malloc(depth * sizeof(zbidx_t));
+    zbidx_t *qidx_2_bidx = malloc(depth * sizeof(zbidx_t));
     zaddr_t  elemq = malloc(depth * elem_size);
     zqidx_t qidx;
 
-    if (!zl || !bidxq || !elemq) {
+    if (!zl || !qidx_2_bidx || !elemq) {
         xerr("<zlist>  %s failed\n", __FUNCTION__);
-        if (bidxq) { free(bidxq); }
+        if (qidx_2_bidx) { free(qidx_2_bidx); }
         if (elemq) { free(elemq); }
         if (zl) { free(zl); }
         return 0;
@@ -40,12 +58,11 @@ zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth)
     zl->depth = depth;
     zl->count = 0;
     zl->elem_size = elem_size;
-    zl->bidx_array = bidxq;
+    zl->qidx_2_bidx = qidx_2_bidx;
     zl->elem_array = elemq;
 
-    //! bidxq[qidx] = qidx
     for (qidx=0; qidx<(int)depth; ++qidx) { 
-        bidxq[qidx] = qidx;
+        qidx_2_bidx[qidx] = qidx;
     }
 
     return zl;
@@ -57,7 +74,7 @@ zlist_t *zlist_realloc(zlist_t *zl, uint32_t depth)
     {
         zqidx_t qidx;
 
-        zbidx_t *bidxq = realloc(zl->bidx_array, depth * sizeof(zbidx_t));
+        zbidx_t *bidxq = realloc(zl->qidx_2_bidx, depth * sizeof(zbidx_t));
         zaddr_t  elemq = realloc(zl->elem_array, depth * zl->elem_size);
 
         //! bidxq[qidx] = qidx
@@ -73,7 +90,7 @@ zlist_t *zlist_realloc(zlist_t *zl, uint32_t depth)
 void zlist_free(zlist_t *zl)
 {
     if (zl)  { 
-        if (zl->bidx_array) { free(zl->bidx_array); }
+        if (zl->qidx_2_bidx) { free(zl->qidx_2_bidx); }
         if (zl->elem_array) { free(zl->elem_array); }
         if (zl) { free(zl); }
     }
@@ -94,20 +111,177 @@ zspace_t zlist_get_space(zlist_t *zl)
     return (zl->depth - zl->count);
 }
 
-zbidx_t zlist_get_elem_bidx(zlist_t *zl, zqidx_t qidx)
+int zlist_is_qidx_in_buf(zlist_t *zl, zqidx_t qidx)
 {
-    zcount_t count = zlist_get_count(zl);
-
-    return (0<=qidx && qidx < count) ? zl->bidx_array[qidx] : ZERRIDX;
+    return (0<=qidx && qidx < zl->depth);
 }
 
-zaddr_t zlist_get_elem_base(zlist_t *zl, zqidx_t qidx)
+int zlist_is_qidx_in_use(zlist_t *zl, zqidx_t qidx)
 {
-    zbidx_t bidx = zlist_get_elem_bidx(zl, qidx);
-    if (bidx >= 0) {
-        return ZLIST_ELEM_BASE(zl, bidx);
+    return (0<=qidx && qidx < zl->count);
+}
+
+zaddr_t zlist_qidx_2_base_in_buf(zlist_t *zl, zqidx_t qidx)
+{
+    if (zlist_is_qidx_in_buf(zl, qidx)) {
+        return ZLIST_ELEM_BASE(zl, zl->qidx_2_bidx[qidx]);
     }
     return 0;
+}
+
+zaddr_t zlist_qidx_2_base_in_use(zlist_t *zl, zqidx_t qidx)
+{
+    if (zlist_is_qidx_in_use(zl, qidx)) {
+        return ZLIST_ELEM_BASE(zl, zl->qidx_2_bidx[qidx]);
+    }
+    return 0;
+
+}
+
+zqidx_t zlist_base_2_qidx_in_buf(zlist_t *zl, zaddr_t elem_base)
+{
+    zbidx_t bidx = zlist_base_2_bidx_in_buf(zl, elem_base);
+    return zlist_bidx_2_qidx_in_buf(zl, bidx);
+}
+
+zqidx_t zlist_base_2_qidx_in_use(zlist_t *zl, zaddr_t elem_base)
+{
+    zbidx_t bidx = zlist_base_2_bidx_in_buf(zl, elem_base);
+    return zlist_bidx_2_qidx_in_use(zl, bidx);
+}
+
+zqidx_t zlist_addr_2_qidx_in_buf(zlist_t *zl, zaddr_t addr)
+{
+    zbidx_t bidx = zlist_addr_2_bidx_in_buf(zl, addr);
+    return zlist_bidx_2_qidx_in_buf(zl, bidx);
+}
+
+zqidx_t zlist_addr_2_qidx_in_use(zlist_t *zl, zaddr_t addr)
+{
+    zbidx_t bidx = zlist_addr_2_bidx_in_buf(zl, addr);
+    return zlist_bidx_2_qidx_in_use(zl, bidx);
+}
+
+
+static
+zqidx_t zlist_base_2_bidx_in_use(zlist_t *zl, zaddr_t elem_base)
+{
+    zbidx_t bidx = zlist_base_2_bidx_in_buf(zl, elem_base);
+    return zlist_bidx_2_qidx_in_use(zl, bidx) >= 0 ? bidx : -1;
+}
+
+static
+zqidx_t zlist_base_2_bidx_in_buf(zlist_t *zl, zaddr_t elem_base)
+{
+    if (zlist_is_addr_in_buf(zl, elem_base)) {
+        zbidx_t bidx = ZLIST_NEAREST_BIDX(zl, elem_base);
+        if (ZLIST_ELEM_BASE(zl, bidx) == elem_base) {
+            return bidx;
+        }
+    }
+    return -1;
+}
+
+static
+zqidx_t zlist_addr_2_bidx_in_buf(zlist_t *zl, zaddr_t addr)
+{
+    if (zlist_is_addr_in_buf(zl, addr)) {
+        return ZLIST_NEAREST_BIDX(zl, addr);
+    }
+    return -1;
+}
+
+static
+zqidx_t zlist_addr_2_bidx_in_use(zlist_t *zl, zaddr_t addr)
+{
+    zbidx_t bidx = zlist_addr_2_bidx_in_buf(zl, addr);
+    return zlist_bidx_2_qidx_in_use(zl, bidx) >= 0 ? bidx : -1;
+}
+
+int zlist_is_addr_in_buf(zlist_t *zl, zaddr_t addr)
+{
+    return (zl->elem_array <= addr && addr < ZLIST_ELEM_BASE(zl, zl->depth));
+}
+
+int zlist_is_addr_in_use(zlist_t *zl, zaddr_t addr)
+{
+    zbidx_t bidx = zlist_addr_2_bidx_in_buf(zl, addr);
+    return zlist_bidx_2_qidx_in_use(zl, bidx) >= 0;
+}
+
+int zlist_is_elem_base_in_buf(zlist_t *zl, zaddr_t elem_base)
+{
+    return zlist_base_2_qidx_in_buf(zl, elem_base) >= 0;
+}
+
+int zlist_is_elem_base_in_use(zlist_t *zl, zaddr_t elem_base)
+{
+    return zlist_base_2_qidx_in_use(zl, elem_base) >= 0;
+}
+
+
+static
+zbidx_t zlist_qidx_2_bidx_in_buf(zlist_t *zl, zqidx_t qidx)
+{
+    return zlist_is_qidx_in_buf(zl, qidx) ? zl->qidx_2_bidx[qidx] : -1;
+}
+
+static
+zbidx_t zlist_qidx_2_bidx_in_use(zlist_t *zl, zqidx_t qidx)
+{
+    return zlist_is_qidx_in_use(zl, qidx) ? zl->qidx_2_bidx[qidx] : -1;
+}
+
+static
+zqidx_t zlist_bidx_2_qidx_in_buf(zlist_t *zl, zqidx_t bidx)
+{
+    if (zlist_is_bidx_in_buf(zl, bidx)) {
+        zqidx_t qidx = 0;
+        for (qidx=0; qidx < zl->depth; ++qidx) {
+            if (zl->qidx_2_bidx[qidx] == bidx) {
+                return qidx;
+            }
+        }
+    }
+    return -1;
+}
+
+static
+zqidx_t zlist_bidx_2_qidx_in_use(zlist_t *zl, zqidx_t bidx)
+{
+    if (zlist_is_bidx_in_buf(zl, bidx)) {
+        zqidx_t qidx = 0;
+        for (qidx=0; qidx < zl->count; ++qidx) {
+            if (zl->qidx_2_bidx[qidx] == bidx) {
+                return qidx;
+            }
+        }
+    }
+    return -1;
+}
+
+static
+int zlist_is_bidx_in_buf(zlist_t *zl, zqidx_t bidx)
+{
+    return (0<=bidx && bidx < zl->depth);
+}
+
+static
+int zlist_is_bidx_in_use(zlist_t *zl, zqidx_t bidx)
+{
+    return zlist_bidx_2_qidx_in_use(zl, bidx) >= 0;
+}
+
+static
+zaddr_t zlist_bidx_2_base_in_buf(zlist_t *zl, zbidx_t bidx)
+{
+    return zlist_is_bidx_in_buf(zl, bidx) ? ZLIST_ELEM_BASE(zl, bidx) : 0;
+}
+
+static
+zaddr_t zlist_bidx_2_base_in_use(zlist_t *zl, zbidx_t bidx)
+{
+    return zlist_bidx_2_qidx_in_use(zl, bidx) >= 0 ? ZLIST_ELEM_BASE(zl, bidx) : 0;
 }
 
 zaddr_t zlist_get_front_base(zlist_t *zl)
@@ -130,6 +304,8 @@ zaddr_t zlist_set_elem_val(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base)
     return 0;
 }
 
+/** internal copy
+ */
 zaddr_t zlist_set_elem_val_itnl(zlist_t *zl, zqidx_t dst_idx, zqidx_t src_idx)
 {
     zaddr_t dst_base = zlist_get_elem_base(zl, dst_idx);
@@ -147,7 +323,7 @@ zaddr_t zlist_pop_elem(zlist_t *zl, zqidx_t qidx)
     zaddr_t base = zlist_get_elem_base(zl, qidx);
 
     if (base) {
-        zmem_swap_near_block(&zl->bidx_array[qidx], sizeof(zqidx_t), 
+        zmem_swap_near_block(&zl->qidx_2_bidx[qidx], sizeof(zqidx_t), 
                               1, zl->count-qidx-1);
         zl->count -= 1;
     }
@@ -173,7 +349,7 @@ zaddr_t zlist_insert_elem(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base)
 
     if (0<=qidx && qidx<=count && space>=1) 
     {
-        zmem_swap_near_block(&zl->bidx_array[qidx], sizeof(zqidx_t), 
+        zmem_swap_near_block(&zl->qidx_2_bidx[qidx], sizeof(zqidx_t), 
                               zl->count-qidx, 1);
         zl->count += 1;
 
@@ -202,7 +378,7 @@ zcount_t zlist_insert_null_elems(
 
     if (0<=insert_before && insert_before<=dst_count && dst_space>=insert_count) 
     {
-        zaddr_t  dst_base  = &dst->bidx_array[insert_before];
+        zaddr_t  dst_base  = &dst->qidx_2_bidx[insert_before];
         zmem_swap_near_block(dst_base, dst->elem_size, 
                              dst->count - insert_before, 
                              insert_count);
@@ -222,7 +398,7 @@ zcount_t  zlist_delete_multi_elems(
 
     if (0<=delete_from && delete_from<=dst_count && dst_count>=delete_count) 
     {
-        zaddr_t  dst_base  = &dst->bidx_array[delete_from];
+        zaddr_t  dst_base  = &dst->qidx_2_bidx[delete_from];
         zmem_swap_near_block(dst_base, dst->elem_size, 
             delete_count, 
             dst_count - delete_from - delete_count);
@@ -362,15 +538,15 @@ void zlist_quick_sort_iter(zlist_t *zl, zl_cmp_func_t func, zqidx_t start, zqidx
         while(left<right && zlist_elem_cmp(zl, func, left, threshold_base) <= 0) {
             ++ left;
         }
-        zl->bidx_array[right] = zl->bidx_array[left];   // first bigger to right
+        zl->qidx_2_bidx[right] = zl->qidx_2_bidx[left];   // first bigger to right
 
         while(left<right && zlist_elem_cmp(zl, func, right, threshold_base) >= 0) {
             -- right;
         }
-        zl->bidx_array[left] = zl->bidx_array[right];   // first smaller to left
+        zl->qidx_2_bidx[left] = zl->qidx_2_bidx[right];   // first smaller to left
     }
 
-    zl->bidx_array[right] = threshold_bidx;
+    zl->qidx_2_bidx[right] = threshold_bidx;
 
     zlist_quick_sort_iter(zl, func, start, left-1);    // smaller part
     zlist_quick_sort_iter(zl, func, left+1, end);      // bigger part

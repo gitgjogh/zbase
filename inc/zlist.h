@@ -14,6 +14,12 @@
  * limitations under the License.
 *****************************************************************************/
 
+/**
+ * \terminology
+ *  -bidx   elem buffer index in the buffer array
+ *  -qidx   elem logi index in the abstract list/queue
+ */
+
 #ifndef ZLIST_H_
 #define ZLIST_H_
 
@@ -27,7 +33,7 @@ typedef struct zlist
 {
     zspace_t    depth;
     zcount_t    count;
-    zbidx_t     *bidx_array;
+    zbidx_t     *qidx_2_bidx;        /** qidx to bidx */
 
     uint32_t    elem_size;
     zaddr_t     elem_array;
@@ -44,9 +50,30 @@ zcount_t    zlist_get_count(zlist_t *zl);
 zspace_t    zlist_get_space(zlist_t *zl);
 
 
-#define     ZLIST_ELEM_BASE(q, bidx)       (((char *)q->elem_array) + (bidx) * q->elem_size)
-zbidx_t     zlist_get_elem_bidx(zlist_t *zl, zqidx_t qidx);        //<! 0<= qidx < count
-zaddr_t     zlist_get_elem_base(zlist_t *zl, zqidx_t qidx);        //<! 0<= qidx < count
+#define     ZLIST_ELEM_BASE(q, bidx) \
+        (((char *)q->elem_array) + (bidx) * q->elem_size)
+zaddr_t     zlist_qidx_2_base_in_buf(zlist_t *zl, zqidx_t qidx);
+zaddr_t     zlist_qidx_2_base_in_use(zlist_t *zl, zqidx_t qidx);
+int         zlist_is_qidx_in_buf(zlist_t *zl, zqidx_t qidx);
+int         zlist_is_qidx_in_use(zlist_t *zl, zqidx_t qidx);
+
+/**
+ * @param elem_base must be elem_size alignment
+ */
+zqidx_t     zlist_base_2_qidx_in_buf(zlist_t *zl, zaddr_t elem_base);
+zqidx_t     zlist_base_2_qidx_in_use(zlist_t *zl, zaddr_t elem_base);
+int         zlist_is_elem_base_in_buf(zlist_t *zl, zaddr_t elem_base);
+int         zlist_is_elem_base_in_use(zlist_t *zl, zaddr_t elem_base);
+
+/**
+ * @param addr no need to be elem_size alignment
+ */
+zqidx_t     zlist_addr_2_qidx_in_buf(zlist_t *zl, zaddr_t addr);
+zqidx_t     zlist_addr_2_qidx_in_use(zlist_t *zl, zaddr_t addr);
+int         zlist_is_addr_in_buf(zlist_t *zl, zaddr_t addr);
+int         zlist_is_addr_in_use(zlist_t *zl, zaddr_t addr);
+
+#define     zlist_get_elem_base         zlist_qidx_2_base_in_use
 zaddr_t     zlist_get_front_base(zlist_t *zl);        //<! @ret zl[0]
 zaddr_t     zlist_get_back_base(zlist_t *zl);         //<! @ret zl[count-1]
 
