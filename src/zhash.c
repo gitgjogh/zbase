@@ -166,7 +166,7 @@ zaddr_t zh_link_get_curr(zh_link_iter_t *iter)
 {
     return iter->curr;
 }
-int zh_is_one_hval_node(zhtree_t *h, zh_hval_t hash, zh_node_t *node)
+int zh_is_one_hval_node(zhash_t *h, zh_hval_t hash, zh_node_t *node)
 {
     zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
     zh_link_iter_t iter = zh_link_iter_init(head);
@@ -178,7 +178,7 @@ int zh_is_one_hval_node(zhtree_t *h, zh_hval_t hash, zh_node_t *node)
     }
     return 0;
 }
-zh_node_t *zh_is_one_hval_key(zhtree_t *h, zh_hval_t hash, 
+zh_node_t *zh_is_one_hval_key(zhash_t *h, zh_hval_t hash, 
                         const char *key, uint32_t key_len)
 {
     zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];

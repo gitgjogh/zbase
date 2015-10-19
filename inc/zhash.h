@@ -80,8 +80,8 @@ zh_link_iter_t  zh_link_iter_init(zh_node_t *head);
 zaddr_t     zh_link_iter_1st(zh_link_iter_t *iter);
 zaddr_t     zh_link_iter_next(zh_link_iter_t *iter);
 zaddr_t     zh_link_get_curr(zh_link_iter_t *iter);
-int         zh_is_one_hval_node(zhtree_t *h, zh_hval_t hash, zh_node_t *node);
-zh_node_t  *zh_is_one_hval_key(zhtree_t *h, zh_hval_t hash, 
+int         zh_is_one_hval_node(zhash_t *h, zh_hval_t hash, zh_node_t *node);
+zh_node_t  *zh_is_one_hval_key(zhash_t *h, zh_hval_t hash, 
                         const char *key, uint32_t key_len);
 
 #define FOR_EACH_COLLISION_NODE(iter) \
