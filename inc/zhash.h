@@ -21,13 +21,13 @@
 #include "zqueue.h"
 #include "zstrq.h"
 
-typedef     uint32_t        zh_hash_t;      /* type for hash value */
+typedef     uint32_t        zh_hval_t;      /* type for hash value */
 typedef     int32_t         zh_type_t;
 
 #define ZH_NODE_COMMON  union {\
     struct {\
         zaddr_t     next;   \
-        zh_hash_t   hash;   \
+        zh_hval_t   hash;   \
         char       *key;    \
     };\
 }
@@ -68,6 +68,27 @@ void        zhash_free(zhash_t *h);
  */
 zaddr_t     zhash_get_node(zhash_t *h, const char *key, uint32_t key_len);
 zaddr_t     zhash_set_node(zhash_t *h, const char *key, uint32_t key_len);
+
+
+/** iterators for traverse through hash collision link */
+typedef struct zhash_collision_iterator {
+    zh_node_t   *head;
+    zh_node_t   *curr;
+}zh_link_iter_t;
+
+zh_link_iter_t  zh_link_iter_init(zh_node_t *head);
+zaddr_t     zh_link_iter_1st(zh_link_iter_t *iter);
+zaddr_t     zh_link_iter_next(zh_link_iter_t *iter);
+zaddr_t     zh_link_get_curr(zh_link_iter_t *iter);
+int         zh_is_one_hval_node(zhtree_t *h, zh_hval_t hash, zh_node_t *node);
+zh_node_t  *zh_is_one_hval_key(zhtree_t *h, zh_hval_t hash, 
+                        const char *key, uint32_t key_len);
+
+#define FOR_EACH_COLLISION_NODE(iter) \
+    for (zh_link_iter_init(&iter); zh_link_get_curr(&iter); zh_link_iter_next(&iter))
+    
+#define WHILE_GET_COLLISION_NODE(iter, node) \
+    for (node = zh_link_iter_init(&iter); node; node = zh_link_iter_next(&iter))
 
 
 /** iterators */

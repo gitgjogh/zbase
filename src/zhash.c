@@ -96,17 +96,11 @@ zaddr_t     zhash_touch_node(zhash_t    *h,
     uint32_t hash = key_len ? zh_nstr_time33(0, key, key_len)
                             : zh_cstr_time33(0, key, &key_len);
 
-    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
-    zh_node_t *node = 0;
-    for (h->ret_flag = 0, node = head; node; node = node->next) 
-    {
-        if (node->hash==hash && node->key[key_len]==0 
-                && strncmp(node->key, key, key_len)==0) 
-        {
-            h->ret_flag |= ZHASH_FOUND;
-            return node;
-        }
-    }
+    zh_node_t *node = zh_is_one_hval_key(h, hash, key, key_len);
+    if (node) {
+        h->ret_flag |= ZHASH_FOUND;
+        return node;
+    } 
 
     if (b_insert) 
     {
@@ -130,6 +124,7 @@ zaddr_t     zhash_touch_node(zhash_t    *h,
         node->key  = saved_key;
 
         /* insert to front */
+        zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
         node->next = head ? head->next : 0;
         h->hash_tbl[GETLSBS(hash, h->depth_log2)] = node;
 
@@ -154,7 +149,51 @@ int         zhash_ret_flag(zhash_t *h)
     return h->ret_flag;
 }
 
-
+zh_link_iter_t   zh_link_iter_init(zh_node_t *head)
+{
+    zh_link_iter_t iter = {head, head};
+    return iter;
+}
+zaddr_t zh_link_iter_1st(zh_link_iter_t *iter)
+{
+    return iter->curr = iter->head;
+}
+zaddr_t zh_link_iter_next(zh_link_iter_t *iter)
+{
+    return iter->curr ? (iter->curr = iter->curr->next) : 0;
+}
+zaddr_t zh_link_get_curr(zh_link_iter_t *iter)
+{
+    return iter->curr;
+}
+int zh_is_one_hval_node(zhtree_t *h, zh_hval_t hash, zh_node_t *node)
+{
+    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
+    zh_link_iter_t iter = zh_link_iter_init(head);
+    zh_node_t *lnode = 0;
+    WHILE_GET_COLLISION_NODE(iter, lnode) {
+        if (lnode == node) {
+            return 1;
+        }
+    }
+    return 0;
+}
+zh_node_t *zh_is_one_hval_key(zhtree_t *h, zh_hval_t hash, 
+                        const char *key, uint32_t key_len)
+{
+    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
+    zh_link_iter_t iter = zh_link_iter_init(head);
+    zh_node_t *node = 0;
+    WHILE_GET_COLLISION_NODE(iter, node) 
+    {
+        if (node->hash==hash && node->key[key_len]==0 
+                && strncmp(node->key, key, key_len)==0) 
+        {
+            return node;
+        }
+    }
+    return 0;
+}
 
 zh_iter_t   zhash_iter(zhash_t *h)
 {
