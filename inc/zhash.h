@@ -85,10 +85,10 @@ zh_node_t  *zh_is_one_hval_key(zhtree_t *h, zh_hval_t hash,
                         const char *key, uint32_t key_len);
 
 #define FOR_EACH_COLLISION_NODE(iter) \
-    for (zh_link_iter_init(&iter); zh_link_get_curr(&iter); zh_link_iter_next(&iter))
+    for (zh_link_iter_1st(&iter); zh_link_get_curr(&iter); zh_link_iter_next(&iter))
     
 #define WHILE_GET_COLLISION_NODE(iter, node) \
-    for (node = zh_link_iter_init(&iter); node; node = zh_link_iter_next(&iter))
+    for (node = zh_link_iter_1st(&iter); node; node = zh_link_iter_next(&iter))
 
 
 /** iterators */
