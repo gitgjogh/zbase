@@ -219,7 +219,7 @@ int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc)
     uint32_t new_pos = 0;
 
     for (pos = start = 0;;) {
-        str_len = get_token_pos(desc, " ,=", pos, &start);
+        str_len = get_field_pos(&desc[pos], " ,=", " ,=", &start);
         if (str_len<=0) {
             break;
         }
@@ -234,13 +234,13 @@ int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc)
         item_cnt += 1;
 
         // get '='
-        str_len = get_token_pos(desc, " ,", pos, &start);
+        str_len = get_field_pos(&desc[pos], " ,", " ,", &start);
         if (str_len<=0 || desc[start] != '=') {
             continue;
         }
 
         // get 'int'
-        str_len = get_token_pos(desc, " ,=", pos, &start);
+        str_len = get_field_pos(&desc[pos], " ,=", " ,", &start);
         if (str_len<=0) {
             xerr("<zopt> no value after `=`\n");
 

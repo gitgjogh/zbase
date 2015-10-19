@@ -126,16 +126,21 @@ int jump_front(const char* str, const char* jumpset)
     return start;
 }
 
-int get_1st_field(const char* str, int search_from,
-                       const char* prejumpset,
-                       const char* delemiters,
-                       int *field_start)
+int get_field_pos(const char* str, 
+                  const char* prejumpset, 
+                  const char* delemiters,
+                  int       * field_start)
 {
     int c, start, end;
+    start = end = 0;
+
+    if (!str) {
+        return 0;
+    }
 
     if (prejumpset) 
     {
-        for (start = search_from; (c = str[start]); ++start) {
+        for (start = 0; (c = str[start]); ++start) {
             if ( !strchr(prejumpset, c) ) {
                 break;
             }
@@ -151,18 +156,19 @@ int get_1st_field(const char* str, int search_from,
             break;
         }
     }
-
-    return end - start;
+    
+    return end-start;
 }
 
-int get_token_pos(const char* str, 
-                  const char* delemiters,
-                  uint32_t search_from,
-                  uint32_t *stoken_start)
+char *get_1st_field(char* str, const char* prejumpset, const char* delemiters, int *field_len)
 {
-    return get_1st_field(str, search_from, 0, delemiters, stoken_start);
+    int subpos = 0;
+    int sublen = get_field_pos(str, prejumpset, delemiters, &subpos);
+    if (field_len) {
+        *field_len = sublen;
+    }
+    return sublen ? &str[subpos] : 0;
 }
-
 
 /**
  *  \brief get fields separated by blank or ','
@@ -173,18 +179,55 @@ int get_token_pos(const char* str,
  */
 int str_2_fields(char *record, int arrSz, char *fieldArr[])
 {
-    int nkey=0, keylen=0, pos=0;
-    keylen = get_1st_field(record, 0, " ", " ,", &pos);
-    while (keylen && nkey<arrSz) {
-        fieldArr[nkey++] = &record[pos];
-        if (record[pos+keylen] == 0) {
-            break;
-        } else {
-            record[pos+keylen] = 0;
-            keylen = get_1st_field(record, pos+keylen+1, " ,", " ,", &pos);
-        }
+    int nkey=0;
+    char *substr = 0;
+    str_iter_t iter = str_iter_init(record, 0);
+    WHILE_GET_FIELD(iter, " ,", " ,", substr) {
+        fieldArr[nkey++] = substr;
+        substr[STR_ITER_GET_SUBLEN(iter)] = 0;
     }
     return nkey;
+}
+
+str_iter_t  str_iter_init(char *str, int len)
+{
+    str_iter_t iter = {str, len, 0, 0};
+    return iter;
+}
+
+static
+void  str_iter_reset(str_iter_t *iter)
+{
+    iter->substr = iter->str;
+    iter->sublen = 0;
+}
+
+char *str_iter_1st_field(str_iter_t *iter, 
+                    const char* prejumpset,
+                    const char* delemiters)
+{
+    str_iter_reset(iter);
+    
+    if (!iter->str) {
+        return 0;
+    }
+    
+    iter->substr = get_1st_field(iter->str, prejumpset, delemiters, &iter->sublen);
+    
+    return iter->substr;
+}
+
+char *str_iter_next_field(str_iter_t *iter, 
+                    const char* prejumpset,
+                    const char* delemiters)
+{
+    /** check last iter to in case dead loop */
+    if (!iter->substr || !iter->sublen) {
+        return 0;
+    }
+    iter->substr = get_1st_field(iter->substr + iter->sublen + 1, 
+                                prejumpset, delemiters, &iter->sublen);
+    return iter->substr;
 }
 
 const char *field_in_record(const char *field, const char *record)

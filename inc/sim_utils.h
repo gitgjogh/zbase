@@ -156,18 +156,55 @@ int num_leading_zero_bits_u32(uint32_t val);
 #define NLZB32(val)                     (num_leading_zero_bits_u32(val))
 #define NLZB64(val)                     (num_leading_zero_bits_u64(val))
 
-char* get_uint32 (char *str, uint32_t *out);
-int jump_front(const char* str, const char* jumpset);
-int get_1st_field(const char* str, int search_from,
-                   const char* prejumpset,
-                   const char* delemiters,
-                   int *field_start);
-int get_token_pos(const char* str, 
-                  const char* delemiters,
-                  uint32_t search_from,
-                  uint32_t *stoken_start);
-int str_2_fields(char *record, int arrSz, char *fieldArr[]);
+char*   get_uint32(char *str, uint32_t *out);
+int     jump_front(const char* str, const char* jumpset);
+
+/**
+ * @return field_len
+ */
+int     get_field_pos(const char* str, 
+                    const char* prejumpset, 
+                    const char* delemiters,
+                    int       * field_pos);
+
+char*   get_1st_field(    char* str, 
+                    const char* prejumpset, 
+                    const char* delemiters, 
+                    int       * field_len);
+                    
+int     str_2_fields(char *record, int arrSz, char *fieldArr[]);
 const char *field_in_record(const char *filed, const char *record);
+
+
+/** iterators for common string traverse */
+typedef struct str_iterator {
+    char   *str;
+    int     len;
+    char   *substr;
+    int     sublen;
+}str_iter_t;
+
+str_iter_t  str_iter_init(char *str, const int len);
+
+char *str_iter_1st_field(str_iter_t *iter, 
+                    const char* prejumpset,
+                    const char* delemiters);
+char *str_iter_next_field(str_iter_t *iter, 
+                    const char* prejumpset,
+                    const char* delemiters);
+
+#define STR_ITER_GET_SUBSTR(iter)   (iter.substr)
+#define STR_ITER_GET_SUBLEN(iter)   (iter.sublen)
+
+#define FOR_EACH_FIELD_IN(iter, prejumpset, delemiters) \
+    for (str_iter_1st_field(&iter, prejumpset, delemiters); \
+        STR_ITER_GET_SUBLEN(iter) != 0; \
+        str_iter_next_field(&iter, prejumpset, delemiters))
+    
+#define WHILE_GET_FIELD(iter, prejumpset, delemiters, substr) \
+    for (substr = str_iter_1st_field(&iter, prejumpset, delemiters); \
+        substr != 0; \
+        substr = str_iter_next_field(&iter, prejumpset, delemiters))
 
 typedef enum {
     SCAN_OK = 0,

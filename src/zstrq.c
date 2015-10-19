@@ -249,20 +249,15 @@ zcount_t zstrq_push_back_all (zstrq_t *dst, zstrq_t *src)
 }
 
 zcount_t zstrq_push_back_list(zstrq_t *dst,
-                                 zsq_char_t *key_list,
-                                 zsq_char_t *delemiters)
+                             zsq_char_t *key_list,
+                             zsq_char_t *delemiters)
 {
-    uint32_t pos, start, str_len;
     zcount_t ori_count = zstrq_get_str_count(dst);
-    zaddr_t base = 0;
-
-    for (pos = 0; ;pos = start+str_len) {
-        str_len = get_token_pos(key_list, delemiters, pos, &start);
-        if (str_len<=0) {
-            break;
-        }
-
-        base = zstrq_push_back(dst, key_list+start, str_len);
+    
+    str_iter_t iter = str_iter_init(key_list, 0);
+    FOR_EACH_FIELD_IN(iter, delemiters, delemiters) {
+        zaddr_t base = zstrq_push_back(dst, STR_ITER_GET_SUBSTR(iter), 
+                                            STR_ITER_GET_SUBLEN(iter));
         if (!base) {
             break;
         }
