@@ -86,6 +86,22 @@ uint32_t zh_cstr_time33(uint32_t type, const char *key, uint32_t *key_len)
     return hash; 
 }
 
+static
+zh_node_t *zh_find_in_collision(zhash_t *h, zh_hval_t hash, 
+                            const char *key, uint32_t key_len)
+{
+    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
+    zh_node_t *node = 0;
+    for (node = head; node; node = node->next) 
+    {
+        if (node->hash==hash && node->key[key_len]==0 
+                && strncmp(node->key, key, key_len)==0) 
+        {
+            return node;
+        }
+    }
+    return 0;
+}
 
 static
 zaddr_t     zhash_touch_node(zhash_t    *h, 
@@ -96,7 +112,7 @@ zaddr_t     zhash_touch_node(zhash_t    *h,
     uint32_t hash = key_len ? zh_nstr_time33(0, key, key_len)
                             : zh_cstr_time33(0, key, &key_len);
 
-    zh_node_t *node = zh_is_one_hval_key(h, hash, key, key_len);
+    zh_node_t *node = zh_find_in_collision(h, hash, key, key_len);
     if (node) {
         h->ret_flag |= ZHASH_FOUND;
         return node;
@@ -161,34 +177,6 @@ zaddr_t zh_link_iter_1st(zh_link_iter_t *iter)
 zaddr_t zh_link_iter_next(zh_link_iter_t *iter)
 {
     return iter->curr ? (iter->curr = iter->curr->next) : 0;
-}
-int zh_is_one_hval_node(zhash_t *h, zh_hval_t hash, zh_node_t *node)
-{
-    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
-    zh_link_iter_t iter = zh_link_iter_init(head);
-    zh_node_t *lnode = 0;
-    WHILE_GET_COLLISION_NODE(iter, lnode) {
-        if (lnode == node) {
-            return 1;
-        }
-    }
-    return 0;
-}
-zh_node_t *zh_is_one_hval_key(zhash_t *h, zh_hval_t hash, 
-                        const char *key, uint32_t key_len)
-{
-    zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
-    zh_link_iter_t iter = zh_link_iter_init(head);
-    zh_node_t *node = 0;
-    WHILE_GET_COLLISION_NODE(iter, node) 
-    {
-        if (node->hash==hash && node->key[key_len]==0 
-                && strncmp(node->key, key, key_len)==0) 
-        {
-            return node;
-        }
-    }
-    return 0;
 }
 
 zh_iter_t   zhash_iter(zhash_t *h)

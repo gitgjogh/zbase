@@ -119,37 +119,6 @@ int zhtree_is_node_in_use(zhtree_t *h, zaddr_t node_base)
     return zqueue_is_elem_base_in_use(h->nodeq, node_base);
 }
 
-int zhtree_is_one_hval_node(zhtree_t *h, zh_hval_t hash, zh_node_t *node)
-{
-    zht_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
-    zh_link_iter_t iter = zh_link_iter_init(head);
-    zh_node_t *lnode = 0;
-    WHILE_GET_COLLISION_NODE(iter, lnode) {
-        if (lnode == node) {
-            return 1;
-        }
-    }
-    return 0;
-}
-zht_node_t *zhtree_is_one_hval_key(zhtree_t *h, zh_hval_t hash, 
-                        zht_node_t *parent,
-                        const char *key, uint32_t key_len)
-{
-    zht_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
-    zh_link_iter_t iter = zh_link_iter_init(head);
-    zht_node_t *node = 0;
-    WHILE_GET_COLLISION_NODE(iter, node) 
-    {
-        if (node->hash==hash && node->key[key_len]==0 
-                && node->parent==parent
-                && strncmp(node->key, key, key_len)==0) 
-        {
-            return node;
-        }
-    }
-    return 0;
-}
-
 zht_child_iter_t   zht_child_iter_init(zht_node_t *parent)
 {
     zht_child_iter_t iter = {
