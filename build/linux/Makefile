@@ -1,50 +1,67 @@
 TOPDIR = ../..
-SRCDIRS = $(TOPDIR)/src
-INCDIRS = $(TOPDIR)/inc
-INCLUDES = $(INCDIRS)
-VPATH = $(TOPDIR):$(SRCDIRS):$(INCLUDES) 
+LIBSIMDIRS = $(TOPDIR)/libsim
+LIBZBASEDIRS = $(TOPDIR)/libzbase
+INCLUDES = $(LIBSIMDIRS):$(LIBZBASEDIRS)
+VPATH = $(TOPDIR):$(LIBSIMDIRS):$(LIBZBASEDIRS)
 
 CC = gcc
-CFLAGS = -c -O3 -I$(INCLUDES)
+CFLAGS = -c -O3
 LIBS = -lm
 
 TMPDIR = mk.tmp
-LIBSRCS = zhash.c zlist.c zqueue.c zstrq.c sim_log.c sim_utils.c sim_opt.c
-LIBOBJS = $(LIBSRCS:%.c=$(TMPDIR)/%.o)
-OUTLIB = libzbase.a
+LIBSIMSRCS = sim_log.c sim_utils.c sim_opt.c
+LIBSIMOBJS = $(LIBSIMSRCS:%.c=$(TMPDIR)/%.o)
+LIBSIM = libsim.a
+
+LIBZBASESRCS = zhash.c zlist.c zqueue.c zstrq.c
+LIBZBASEOBJS = $(LIBZBASESRCS:%.c=$(TMPDIR)/%.o)
+LIBZBASE = libzbase.a
 
 BINSRCS = ztest.c 
 BINOBJS = $(BINSRCS:%.c=$(TMPDIR)/%.o)
 OUTBIN = ztest
 
+
 .PHONY: all
-all : $(OUTLIB) $(OUTBIN)
+all : $(LIBSIM) $(LIBZBASE) $(OUTBIN) 
+
 
 .PHONY: clean
 clean: 
 	@echo; echo "cleaning ..."
 	rm -rf $(TMPDIR)
-	rm -rf $(OUTLIB)
+	rm -rf $(LIBSIM)
+	rm -rf $(LIBZBASE)
 	rm -rf $(OUTBIN)
 
-$(OUTLIB): $(LIBOBJS)
-	@echo; echo "[AR] linking ..."
+$(LIBSIM): $(LIBSIMOBJS) 
+	@echo; echo "[AR] linking '$@' ..."
+	rm -f $@
+	$(AR) -crs $@ $^
+    
+$(LIBZBASE): $(LIBZBASEOBJS)
+	@echo; echo "[AR] linking '$@' ..."
 	rm -f $@
 	$(AR) -crs $@ $^
 	
-$(OUTBIN): $(BINOBJS) $(OUTLIB)
-	@echo; echo "[LD] linking"
-	$(CC) -o $@ $^ -I../../ -I$(INCLUDES)
+$(OUTBIN): $(BINOBJS) $(LIBSIM) $(LIBZBASE)
+	@echo; echo "[LD] linking ..."
+	cc -I$(LIBSIMDIRS) -I$(LIBZBASEDIRS) -o $@ $^
+
+$(LIBSIMOBJS): $(LIBSIMDIRS)/*.h Makefile
+$(LIBSIMOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
+	@echo; echo "[CC] compiling: $< "
+	$(CC) $(CFLAGS) -I$(LIBSIMDIRS) -o $@ $<
     
-$(LIBOBJS) $(BINOBJS): $(INCDIRS)/*.h Makefile | $(TMPDIR)
-
-$(LIBOBJS): $(TMPDIR)/%.o:%.c
+$(LIBZBASEOBJS): $(LIBSIMDIRS)/*.h $(LIBZBASEDIRS)/*.h Makefile
+$(LIBZBASEOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
 	@echo; echo "[CC] compiling: $< "
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -I$(LIBSIMDIRS) -I$(LIBZBASEDIRS) -o $@ $<
 
-$(BINOBJS): $(TMPDIR)/%.o:%.c
+$(BINOBJS): $(LIBSIMDIRS)/*.h $(LIBZBASEDIRS)/*.h Makefile
+$(BINOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
 	@echo; echo "[CC] compiling: $< "
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -I$(LIBSIMDIRS) -I$(LIBZBASEDIRS) -o $@ $<
 
 $(TMPDIR):
 	mkdir $(TMPDIR)
