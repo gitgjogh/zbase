@@ -8,7 +8,7 @@ CFLAGS = -c -O3
 LIBS = -lm
 
 TMPDIR = mk.tmp
-LIBZBASESRCS = zhash.c zlist.c zqueue.c zstrq.c
+LIBZBASESRCS = zhtree.c zhash.c zlist.c zqueue.c zstrq.c
 LIBZBASEOBJS = $(LIBZBASESRCS:%.c=$(TMPDIR)/%.o)
 LIBZBASE = libzbase.a
 
