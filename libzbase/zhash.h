@@ -79,13 +79,13 @@ typedef struct zhash_collision_iterator {
 zh_link_iter_t  zh_link_iter_init(zh_node_t *head);
 zaddr_t     zh_link_iter_1st(zh_link_iter_t *iter);
 zaddr_t     zh_link_iter_next(zh_link_iter_t *iter);
-zaddr_t     zh_link_get_curr(zh_link_iter_t *iter);
+#define     ZH_LINK_GET_CURR(iter)      ((zh_node_t * const)(iter.curr))
 int         zh_is_one_hval_node(zhash_t *h, zh_hval_t hash, zh_node_t *node);
 zh_node_t  *zh_is_one_hval_key(zhash_t *h, zh_hval_t hash, 
                         const char *key, uint32_t key_len);
 
 #define FOR_EACH_COLLISION_NODE(iter) \
-    for (zh_link_iter_1st(&iter); zh_link_get_curr(&iter); zh_link_iter_next(&iter))
+    for (zh_link_iter_1st(&iter); ZH_LINK_GET_CURR(iter); zh_link_iter_next(&iter))
     
 #define WHILE_GET_COLLISION_NODE(iter, node) \
     for (node = zh_link_iter_1st(&iter); node; node = zh_link_iter_next(&iter))

@@ -193,8 +193,8 @@ char *str_iter_next_field(str_iter_t *iter,
                     const char* prejumpset,
                     const char* delemiters);
 
-#define STR_ITER_GET_SUBSTR(iter)   (iter.substr)
-#define STR_ITER_GET_SUBLEN(iter)   (iter.sublen)
+#define STR_ITER_GET_SUBSTR(iter)   ((char * const)(iter.substr))
+#define STR_ITER_GET_SUBLEN(iter)   ((const int)(iter.sublen))
 
 #define FOR_EACH_FIELD_IN(iter, prejumpset, delemiters) \
     for (str_iter_1st_field(&iter, prejumpset, delemiters); \

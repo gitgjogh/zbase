@@ -162,10 +162,6 @@ zaddr_t zh_link_iter_next(zh_link_iter_t *iter)
 {
     return iter->curr ? (iter->curr = iter->curr->next) : 0;
 }
-zaddr_t zh_link_get_curr(zh_link_iter_t *iter)
-{
-    return iter->curr;
-}
 int zh_is_one_hval_node(zhash_t *h, zh_hval_t hash, zh_node_t *node)
 {
     zh_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
