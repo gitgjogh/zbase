@@ -163,15 +163,16 @@ zaddr_t  zstrq_push_back(zstrq_t *sq, const zsq_char_t* str, uint32_t str_len)
         sq = zstrq_realloc(sq, sq->buf_size + g_zsq_page);
         space = zstrq_get_buf_space(sq) - 1;
     }
+    
+    if (space<(int)str_len) {
+        xerr("<zstrq> str buf overflow\n");
+        return 0;
+    }
 
     dst = sq->str_buf + sq->buf_used;
     for (i=0; (c=str[i]) && i<(int)str_len && i<space; ++i) {
         dst[i] = c;
     } 
-    if (i>=space && c!=0) {
-        xerr("<zstrq> str buf overflow\n");
-        return 0;
-    }
 
     dst[i] = 0;
     sq->buf_used += (i+1);
