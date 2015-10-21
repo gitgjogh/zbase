@@ -45,7 +45,7 @@ zspace_t    zqueue_get_space(zqueue_t *q);
 
 
 #define     ZQUEUE_ELEM_BASE(q, bidx) \
-        (((char *)q->elem_array) + (bidx) * q->elem_size)
+        ((zaddr_t)(((char *)q->elem_array) + (bidx) * q->elem_size))
 zaddr_t     zqueue_qidx_2_base_in_buf(zqueue_t *q, zqidx_t qidx);
 zaddr_t     zqueue_qidx_2_base_in_use(zqueue_t *q, zqidx_t qidx);
 int         zqueue_is_qdix_in_buf(zqueue_t *q, zqidx_t qidx);

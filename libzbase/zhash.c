@@ -165,7 +165,7 @@ int         zhash_ret_flag(zhash_t *h)
     return h->ret_flag;
 }
 
-zh_link_iter_t   zh_link_iter_init(zh_node_t *head)
+zh_link_iter_t   zh_link_iter_init(zaddr_t head)
 {
     zh_link_iter_t iter = {head, head};
     return iter;

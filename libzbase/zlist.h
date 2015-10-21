@@ -51,7 +51,7 @@ zspace_t    zlist_get_space(zlist_t *zl);
 
 
 #define     ZLIST_ELEM_BASE(q, bidx) \
-        (((char *)q->elem_array) + (bidx) * q->elem_size)
+        ((zaddr_t)(((char *)q->elem_array) + (bidx) * q->elem_size))
 zaddr_t     zlist_qidx_2_base_in_buf(zlist_t *zl, zqidx_t qidx);
 zaddr_t     zlist_qidx_2_base_in_use(zlist_t *zl, zqidx_t qidx);
 int         zlist_is_qidx_in_buf(zlist_t *zl, zqidx_t qidx);

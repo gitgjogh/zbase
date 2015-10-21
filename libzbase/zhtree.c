@@ -120,12 +120,12 @@ int zhtree_is_node_in_use(zhtree_t *h, zaddr_t node_base)
     return zqueue_is_elem_base_in_use(h->nodeq, node_base);
 }
 
-zht_child_iter_t   zht_child_iter_init(zht_node_t *parent)
+zht_child_iter_t   zht_child_iter_init(zaddr_t parent)
 {
     zht_child_iter_t iter = {
         parent, 
-        parent ? parent->child : 0, 
-        parent ? parent->child : 0
+        parent ? ((zht_node_t *)parent)->child : 0, 
+        parent ? ((zht_node_t *)parent)->child : 0
     };
     return iter;
 }
@@ -150,7 +150,7 @@ int zhtree_is_one_child(zhtree_t *h, zht_node_t *parent, zht_node_t *node)
 {
     zht_child_iter_t iter = zht_child_iter_init(parent);
     FOR_ZHT_CHILD_IN(iter) {
-        if (ZHT_CHILD_GET_CURR(iter) == node) {
+        if (zht_child_iter_curr(&iter) == node) {
             return 1;
         }
     }

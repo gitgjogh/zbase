@@ -19,22 +19,23 @@
 
 #include "zhash.h"
 
+typedef struct zhtree_node zht_node_t;
 
 #define ZHTREE_NODE_COMMON  union {\
     struct { \
         ZH_NODE_COMMON;         \
         /* tree related */      \
         int         layer;      \
-        zaddr_t     parent;     \
-        zaddr_t     child;      \
-        zaddr_t     left;       \
-        zaddr_t     right;      \
+        zht_node_t *parent;     \
+        zht_node_t *child;      \
+        zht_node_t *left;       \
+        zht_node_t *right;      \
     }; \
 }
 
-typedef struct zhtree_node { 
+struct zhtree_node { 
     ZHTREE_NODE_COMMON;
-}zht_node_t;
+};
 
 typedef zht_node_t* zht_head_t;
 
@@ -90,14 +91,16 @@ typedef struct zhtree_children_iterator {
     zht_node_t  *curr;
 }zht_child_iter_t;
 
-zht_child_iter_t   zht_child_iter_init(zht_node_t *parent);
+zht_child_iter_t   zht_child_iter_init(zaddr_t parent);
 zaddr_t     zht_child_iter_1st(zht_child_iter_t *iter);
 zaddr_t     zht_child_iter_next(zht_child_iter_t *iter);
-#define     ZHT_CHILD_GET_CURR(iter)        ((zht_node_t * const)(iter.curr))
+#define     zht_child_iter_curr(iter) \
+    ((zht_node_t * const) (((zht_child_iter_t *)(iter))->curr))
+    
 int         zht_is_in_children_link(zhtree_t *h, zht_node_t *parent, zht_node_t *node);
 
 #define FOR_ZHT_CHILD_IN(iter) \
-    for (zht_child_iter_1st(&iter); ZHT_CHILD_GET_CURR(iter); zht_child_iter_next(&iter))
+    for (zht_child_iter_1st(&iter); zht_child_iter_curr(&iter); zht_child_iter_next(&iter))
     
 #define WHILE_GET_ZHT_CHILD(iter, child) \
     for (child = zht_child_iter_1st(&iter); child; child = zht_child_iter_next(&iter))
