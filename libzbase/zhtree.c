@@ -120,12 +120,12 @@ int zhtree_is_node_in_use(zhtree_t *h, zaddr_t node_base)
     return zqueue_is_elem_base_in_use(h->nodeq, node_base);
 }
 
-zht_child_iter_t   zht_child_iter_init(zaddr_t parent)
+zht_child_iter_t   zht_child_iter_init(zht_node_t *parent)
 {
     zht_child_iter_t iter = {
         parent, 
-        parent ? ((zht_node_t *)parent)->child : 0, 
-        parent ? ((zht_node_t *)parent)->child : 0
+        parent ? parent->child : 0, 
+        parent ? parent->child : 0
     };
     return iter;
 }
@@ -144,7 +144,10 @@ zaddr_t zht_child_iter_next(zht_child_iter_t *iter)
     }
     return 0;
 }
-
+zaddr_t zht_child_iter_curr(zht_child_iter_t *iter)
+{
+    return iter->curr;
+}
 
 int zhtree_is_one_child(zhtree_t *h, zht_node_t *parent, zht_node_t *node)
 {
@@ -180,7 +183,7 @@ zht_node_t *zhtree_find_in_collision(zhtree_t *h, zht_node_t *parent,
 {
     zht_node_t *head = h->hash_tbl[GETLSBS(hash, h->depth_log2)];
     zht_node_t *node = 0;
-    zh_link_iter_t iter = zh_link_iter_init(head);
+    zh_link_iter_t iter = zh_link_iter_init((zh_node_t *)head);
     WHILE_GET_COLLISION_NODE(iter, node) 
     {
         if (node->hash==hash && node->parent==parent &&

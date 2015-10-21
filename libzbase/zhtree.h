@@ -68,7 +68,7 @@ void        zhtree_free(zhtree_t *h);
 
 int         zhtree_ret_flag(zhtree_t *h);
 zaddr_t     zhtree_get_root(zhtree_t *h);
-#define     zhtree_get_wdir(h)                  ((zaddr_t const)(h->wdir))
+zaddr_t     zhtree_get_wdir(zhtree_t *h);
 
 /**
  *  @param key_len  - If 0, @key_len is ignored, @key is null end str. 
@@ -91,12 +91,10 @@ typedef struct zhtree_children_iterator {
     zht_node_t  *curr;
 }zht_child_iter_t;
 
-zht_child_iter_t   zht_child_iter_init(zaddr_t parent);
+zht_child_iter_t   zht_child_iter_init(zht_node_t *parent);
 zaddr_t     zht_child_iter_1st(zht_child_iter_t *iter);
 zaddr_t     zht_child_iter_next(zht_child_iter_t *iter);
-#define     zht_child_iter_curr(iter) \
-    ((zht_node_t * const) (((zht_child_iter_t *)(iter))->curr))
-    
+zaddr_t     zht_child_iter_curr(zht_child_iter_t *iter);
 int         zht_is_in_children_link(zhtree_t *h, zht_node_t *parent, zht_node_t *node);
 
 #define FOR_ZHT_CHILD_IN(iter) \

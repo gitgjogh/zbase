@@ -165,7 +165,7 @@ int         zhash_ret_flag(zhash_t *h)
     return h->ret_flag;
 }
 
-zh_link_iter_t   zh_link_iter_init(zaddr_t head)
+zh_link_iter_t   zh_link_iter_init(zh_node_t *head)
 {
     zh_link_iter_t iter = {head, head};
     return iter;
@@ -177,6 +177,10 @@ zaddr_t zh_link_iter_1st(zh_link_iter_t *iter)
 zaddr_t zh_link_iter_next(zh_link_iter_t *iter)
 {
     return iter->curr ? (iter->curr = iter->curr->next) : 0;
+}
+zaddr_t zh_link_iter_curr(zh_link_iter_t *iter)
+{
+    return iter->curr;
 }
 
 zh_iter_t   zhash_iter(zhash_t *h)
