@@ -56,6 +56,7 @@ zhtree_t *zhtree_malloc(uint32_t node_size, uint32_t depth_log2)
     memset(root, 0, sizeof(zht_node_t));
     root->key = name;
     zh->root = root;
+    zh->wdir = root;
 
     return zh;
 }
@@ -199,7 +200,7 @@ zaddr_t zhtree_touch_node(zhtree_t *h, zht_node_t *parent,
     uint32_t hash = key_len ? zht_nstr_time33(parent->hash, key, key_len)
                             : zht_cstr_time33(parent->hash, key, &key_len);
 
-    zh_node_t *node = zhtree_find_in_collision(h, parent, hash, key, key_len);
+    zht_node_t *node = zhtree_find_in_collision(h, parent, hash, key, key_len);
     if (node) {
         h->ret_flag |= ZHASH_FOUND;
         return node;
@@ -273,18 +274,6 @@ zaddr_t zhtree_set_node(zhtree_t *h, zht_node_t *father,
     return zhtree_touch_node(h, father, key, keylen, 1);
 }
 
-zaddr_t zhtree_get_working_dir(zhtree_t *h)
-{
-    if (h->cwd && zqueue_get_count(h->cwd)) {
-        zaddr_t base = zqueue_get_back_base(h->cwd);
-        if (base) {
-            return *((zhtree_t **)base);
-        }
-    }
-
-    return h->root;
-}
-
 static
 zaddr_t zhtree_touch_path(zhtree_t *h, const char *path, uint32_t path_len, int b_insert)
 {
@@ -301,17 +290,24 @@ zaddr_t zhtree_touch_path(zhtree_t *h, const char *path, uint32_t path_len, int 
         parent = zhtree_get_root(h);
         pos += 1;
     } else {
-        parent = zhtree_get_working_dir(h);
+        parent = zhtree_get_wdir(h);
     }
     
     char *substr = 0;
     str_iter_t iter = str_iter_init(path, 0);
-    WHILE_GET_FIELD(iter, " ,", " ,", substr) 
+    WHILE_GET_FIELD(iter, "", "/", substr) 
     {
         int sublen = STR_ITER_GET_SUBLEN(iter);
-        child = zhtree_touch_node(h, parent, substr, sublen, b_insert);
+        if (sublen == 1 && substr[0] == '.') {
+            continue;
+        } else if (sublen == 2 && substr[0] == '.' && substr[1] == '.') {
+            child = child->parent;
+        } else {
+            child = zhtree_touch_node(h, parent, substr, sublen, b_insert);
+        }
+        
         if (child) {
-            parent = child;            
+            parent = child;
         } else {
             break;
         }

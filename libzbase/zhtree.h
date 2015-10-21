@@ -50,8 +50,9 @@ typedef struct zhtree
     
     uint32_t     ret_flag;
     
+//private:    
     zaddr_t      root;
-    zqueue_t    *cwd;               //<! vector<zht_node_t*> cwd; #current working directory
+    zaddr_t      wdir;              //<! current working directory
 }zhtree_t;
 
 
@@ -66,7 +67,7 @@ void        zhtree_free(zhtree_t *h);
 
 int         zhtree_ret_flag(zhtree_t *h);
 zaddr_t     zhtree_get_root(zhtree_t *h);
-zaddr_t     zhtree_get_working_dir(zhtree_t *h);
+#define     zhtree_get_wdir(h)                  ((zaddr_t const)(h->wdir))
 
 /**
  *  @param key_len  - If 0, @key_len is ignored, @key is null end str. 
