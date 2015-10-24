@@ -25,6 +25,12 @@ static uint32_t zht_nstr_time33(uint32_t type, const char *key, uint32_t key_len
 static uint32_t zht_cstr_time33(uint32_t type, const char *key, uint32_t *key_len);
 static zaddr_t zhtree_add_to_children(zhtree_t *h, zht_node_t *parent, zht_node_t *node);
 
+static zht_node_t *zhtree_find_in_children(zhtree_t *h, zht_node_t *parent, 
+                            zh_hval_t hash, const char *key, uint32_t key_len);
+static zht_node_t *zhtree_find_in_collision(zhtree_t *h, zht_node_t *parent, 
+                            zh_hval_t hash, const char *key, uint32_t key_len);
+
+
 zhtree_t *zhtree_malloc(uint32_t node_size, uint32_t depth_log2)
 {
     zhtree_t *zh = calloc( 1, sizeof(zhtree_t) );
