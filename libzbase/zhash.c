@@ -188,21 +188,25 @@ zh_iter_t   zhash_iter(zhash_t *h)
     zh_iter_t iter = {h, 0};
     return iter;
 }
+zaddr_t zhash_iter_curr(zh_iter_t *iter)
+{
+    return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx);
+}
 
-zaddr_t zhash_front(zh_iter_t *iter) 
+zaddr_t zhash_iter_front(zh_iter_t *iter) 
 {
     return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=0);
 }
-zaddr_t zhash_back(zh_iter_t *iter)  
+zaddr_t zhash_iter_back(zh_iter_t *iter)  
 { 
     zcount_t count = zqueue_get_count(iter->h->nodeq);
     return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=count-1);
 }
-zaddr_t zhash_next(zh_iter_t *iter)  
+zaddr_t zhash_iter_next(zh_iter_t *iter)  
 { 
     return zqueue_get_elem_base(iter->h->nodeq, ++ iter->iter_idx);
 }
-zaddr_t zhash_prev(zh_iter_t *iter)  
+zaddr_t zhash_iter_prev(zh_iter_t *iter)  
 { 
     return zqueue_get_elem_base(iter->h->nodeq, -- iter->iter_idx);
 }

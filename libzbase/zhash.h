@@ -97,9 +97,22 @@ typedef struct zhash_iterator {
 }zh_iter_t;
 
 zh_iter_t   zhash_iter(zhash_t *h);
-zaddr_t     zhash_front(zh_iter_t *iter);
-zaddr_t     zhash_back(zh_iter_t *iter);
-zaddr_t     zhash_next(zh_iter_t *iter);
-zaddr_t     zhash_prev(zh_iter_t *iter);
+zaddr_t     zhash_iter_curr(zh_iter_t *iter);
+
+zaddr_t     zhash_iter_front(zh_iter_t *iter);
+zaddr_t     zhash_iter_next(zh_iter_t *iter);
+
+#define     FOR_ZHASH_ITER_PREORDER(iter) \
+    for (zh_link_iter_1st(&iter); zh_link_iter_curr(&iter); zh_link_iter_next(&iter))
+#define     WHILE_ZHASH_ITER_PREORDER(iter, node) \
+    for (node = zhash_iter_front(&iter); node; node = zhash_iter_next(&iter))
+
+zaddr_t     zhash_iter_back(zh_iter_t *iter);
+zaddr_t     zhash_iter_prev(zh_iter_t *iter);
+
+#define     FOR_ZHASH_ITER_POSTORDER(iter) \
+    for (zhash_iter_back(&iter); zh_link_iter_curr(&iter); zhash_iter_prev(&iter))
+#define     WHILE_ZHASH_ITER_POSTORDER(iter, node) \
+    for (node = zhash_iter_back(&iter); node; node = zhash_iter_prev(&iter))
 
 #endif // ZHASH_H_

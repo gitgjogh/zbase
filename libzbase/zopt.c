@@ -112,7 +112,7 @@ int zopt_print_help(zopt_t *opt, zopt_node_t *node)
     {
         zh_iter_t _iter = zhash_iter(opt->h), *iter = &_iter;
 
-        for (sub=zhash_front(iter); sub!=0; sub=zhash_next(iter))
+        WHILE_ZHASH_ITER_PREORDER(iter, sub)
         {
             if (sub->type == node->sub_type) {
                 node_count += zopt_print_help(opt, sub);
