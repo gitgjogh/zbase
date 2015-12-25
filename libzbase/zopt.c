@@ -78,7 +78,7 @@ zopt_t* zopt_malloc(uint32_t depth_log2)
     }
     
     ps->h = ZHASH_MALLOC(zopt_node_t, depth_log2);
-    ps->access_stack = ZQUEUE_MALLOC(zopt_node_t*, 32);
+    ps->access_stack = ZQUEUE_MALLOC_D(zopt_node_t*, 32);
 
     if (!ps->h || !ps->access_stack) {
         xerr("<zopt> %s() 1 failed!\n", __FUNCTION__);

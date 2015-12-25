@@ -19,26 +19,46 @@
 
 #include "zdefs.h"
 
-typedef struct z_bi_dir_circular_queue
+typedef struct z_queue
 {
     zspace_t  depth;
     zcount_t  count;
     uint32_t  elem_size;
     zaddr_t   elem_array;
+    int       b_allocated;
+    int       b_allow_realloc;        
 
 //private:
     zaddr_t   elem_swap;
 }zqueue_t;
 
+zcount_t    zqueue_buf_attach(zqueue_t *q, zaddr_t buf, uint32_t elem_size, uint32_t depth);
+void        zqueue_buf_detach(zqueue_t *q);
 
-uint32_t    zqueue_size(uint32_t elem_size, uint32_t depth);
-#define     ZQUEUE_SIZE(type_t, depth)      zqueue_size(sizeof(type_t), (depth))
-zqueue_t*   zqueue_placement_new(zaddr_t buf, uint32_t elem_size, uint32_t depth);
-zqueue_t*   zqueue_malloc(uint32_t elem_size, uint32_t depth);
-void        zqueue_memzero(zqueue_t *q);
-zqueue_t*   zqueue_realloc(zqueue_t *q, uint32_t depth);
-#define     ZQUEUE_MALLOC(type_t, depth)    zqueue_malloc(sizeof(type_t), (depth))
+zaddr_t     zqueue_buf_malloc(zqueue_t *q, uint32_t elem_size, uint32_t depth, int b_allow_realloc);
+zaddr_t     zqueue_buf_realloc(zqueue_t *q, uint32_t depth, int b_allow_realloc);
+void        zqueue_buf_free(zqueue_t *q);
+
+/**
+ * Enlarge queue buffer.
+ * In case of reallocation failure, the old buf is kept unchanged.
+ * 
+ * @param additional_count  the count of elem to be allocated
+ *                          in addition to zqueue_get_count()
+ * @return zqueue_get_space() after buf grow. 
+ */
+zspace_t    zqueue_buf_grow(zqueue_t *q, uint32_t additional_count);
+
+
+zqueue_t*   zqueue_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc);
+zqueue_t*   zqueue_malloc_s(uint32_t elem_size, uint32_t depth);
+zqueue_t*   zqueue_malloc_d(uint32_t elem_size, uint32_t depth);
+#define     ZQUEUE_MALLOC_S(type_t, depth)    zqueue_malloc_s(sizeof(type_t), (depth))
+#define     ZQUEUE_MALLOC_D(type_t, depth)    zqueue_malloc_d(sizeof(type_t), (depth))
 void        zqueue_free(zqueue_t *q);
+
+void        zqueue_memzero(zqueue_t *q);
+
 zcount_t    zqueue_get_depth(zqueue_t *q);
 zcount_t    zqueue_get_count(zqueue_t *q);
 zspace_t    zqueue_get_space(zqueue_t *q);

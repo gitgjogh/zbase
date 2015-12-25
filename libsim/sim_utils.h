@@ -233,4 +233,14 @@ int scan_for_float(const char *_str, float *ret_, const char **end_);
 int str_2_uint(const char *_str, unsigned int *ret_);
 int str_2_int(const char *_str, int *ret_);
 
+
+/**
+ * Free a memory block and set the pointer pointing to it to NULL.
+ * @note passing a pointer to a NULL pointer is safe and leads to no action.
+ */
+#define SIM_FREEP(ptr) do { \
+    if (ptr) { free(ptr); } \
+    ptr = 0;                \
+} while (0)
+
 #endif  // __SIM_UTILS_H__

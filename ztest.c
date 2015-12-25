@@ -117,7 +117,7 @@ int zqueue_test(int argc, char** argv)
     int item, idx;
     zaddr_t ret, popped;
 
-    zqueue_t *q = ZQUEUE_MALLOC(int, 10);
+    zqueue_t *q = ZQUEUE_MALLOC_S(int, 10);
     for(idx=1; idx<8; ++idx)
         zqueue_push_back(q, &idx);
     zqueue_print(q, "init with 1~7, size=10", int_printf, ", ", "\n\n");

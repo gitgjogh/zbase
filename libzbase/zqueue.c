@@ -29,35 +29,114 @@ static void     zqueue_quick_sort_iter(zqueue_t *q, zq_cmp_func_t func,
                                        zqidx_t start, zqidx_t end);
 
 
-uint32_t zqueue_size(uint32_t elem_size, uint32_t depth)
-{
-    uint32_t total_size = sizeof(zqueue_t) + elem_size * (depth + 1);
-    return   total_size;
-}
 
-zqueue_t* zqueue_placement_new(zaddr_t buf, uint32_t elem_size, uint32_t depth)
+/* buffer attach would reset the entire context */
+zcount_t zqueue_buf_attach(zqueue_t *q, zaddr_t buf, uint32_t elem_size, uint32_t depth)
 {
-    zqueue_t *q = (zqueue_t *)buf;
-
-    memset(q, 0, sizeof(zqueue_t));
     q->depth = depth;
     q->count = 0;
-    q->elem_size  = elem_size;
-    q->elem_swap  = (void *)( (char *)buf + sizeof(zqueue_t) );
-    q->elem_array = (void *)( (char *)q->elem_swap + elem_size );
+    q->elem_size = elem_size;
+    q->elem_array = buf;
+    q->b_allocated = 0;
+    q->b_allow_realloc = 0;
 
+    return depth;
+}
+
+void zqueue_buf_detach(zqueue_t *q)
+{
+    if (!q->b_allocated) {
+        zqueue_buf_attach(q, 0, 0, 0);
+    }
+}
+
+zaddr_t zqueue_buf_malloc(zqueue_t *q, uint32_t elem_size, uint32_t depth, int b_allow_realloc)
+{
+    zaddr_t buf = malloc( elem_size * depth );
+    if (buf) {
+        zqueue_buf_attach(q, buf, elem_size, depth);
+        q->b_allocated = 1;
+        q->b_allow_realloc = b_allow_realloc;
+        return buf;
+    }
+    xerr("%s() failed!\n", __FUNCTION__);
+    return 0;
+}
+
+zaddr_t zqueue_buf_realloc(zqueue_t *q, uint32_t depth, int b_allow_realloc)
+{
+    zcount_t count = zqueue_get_count(q);
+    if (q->b_allocated && q->b_allow_realloc) {
+        if (depth < count) {
+            xerr("data drop is not allowed in %s()!\n", __FUNCTION__);
+            return 0;
+        }
+        
+        zaddr_t buf = realloc(q->elem_array, q->elem_size * depth);
+        if (buf) {
+            q->depth = depth;
+            q->count = (q->count <= depth) ? q->count : depth;
+            q->elem_array = buf;
+            q->b_allow_realloc = b_allow_realloc;
+            return buf;
+        }
+        xerr("%s() failed!\n", __FUNCTION__);
+    }
+    return 0;
+}
+
+/**
+ * Enlarge queue buffer.
+ * In case of reallocation failure, the old buf is kept unchanged.
+ * 
+ * @param additional_count  the count of elem to be allocated
+ *                          in addition to zqueue_get_count()
+ * @return new space after buf grow. 
+ */
+zspace_t zqueue_buf_grow(zqueue_t *q, uint32_t additional_count)
+{
+    if (q->b_allocated && q->b_allow_realloc) {
+        zcount_t old_depth = zqueue_get_depth(q);
+        zcount_t new_depth = additional_count + zqueue_get_count(q);
+        if (new_depth > old_depth) {
+            zaddr_t new_addr = zqueue_buf_realloc(q, new_depth, 1);
+            if (!new_addr) {
+                xerr("%s() failed!\n", __FUNCTION__);
+            }
+        }
+    }
+    return zqueue_get_space(q);
+}
+
+void zqueue_buf_free(zqueue_t *q)
+{
+    if (q->b_allocated && q->elem_array) {
+        SIM_FREEP(q->elem_array);
+    }
+}
+
+zqueue_t *zqueue_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc)
+{
+    zaddr_t q = malloc( sizeof(zqueue_t) );
+    if (!q) {
+        xerr("%s() failed!\n", __FUNCTION__);
+    } else {
+        zaddr_t base = zqueue_buf_malloc(q, elem_size, depth, b_allow_realloc);
+        if (!base) {
+            SIM_FREEP(q);
+        }
+    }
     return q;
 }
 
-zqueue_t *zqueue_malloc(uint32_t elem_size, uint32_t depth)
+zqueue_t* zqueue_malloc_s(uint32_t elem_size, uint32_t depth)
 {
-    zaddr_t buf = malloc( zqueue_size(elem_size, depth) );
-    if (!buf) {
-        printf ("%s() failed!\n", __FUNCTION__);
-    } else {
-        return zqueue_placement_new(buf, elem_size, depth);
-    }
-    return 0;
+    return zqueue_malloc(elem_size, depth, 0);
+}
+
+zqueue_t* zqueue_malloc_d(uint32_t elem_size, uint32_t depth)
+{
+    return zqueue_malloc(elem_size, depth, 1);
 }
 
 void zqueue_memzero(zqueue_t *q) 
@@ -67,27 +146,21 @@ void zqueue_memzero(zqueue_t *q)
     }
 }
 
-zqueue_t* zqueue_realloc(zqueue_t *q, uint32_t depth)
-{
-    if ((int)depth > q->depth) {
-        uint32_t new_size = zqueue_size(q->elem_size, depth);
-        void *new_buf = realloc((void *)q, new_size);
-        if (new_buf && new_buf != (void *)q) {
-            zqueue_t *nq = zqueue_placement_new(new_buf, q->elem_size, depth);
-            zqueue_push_back_all_of_others(nq, q);
-            zqueue_free(q);
-            return nq;
-        }
-    }
-    return q;
-}
-
 void zqueue_free(zqueue_t *q)
 {
     if (q) {
-        if (q->elem_array) { free(q->elem_array); }
+        if (q->b_allocated) { 
+            zqueue_buf_free(q);
+        } else {
+            zqueue_buf_detach(q);
+        }
         free(q); 
     }
+}
+
+zcount_t zqueue_get_depth(zqueue_t *q)
+{
+    return (q->depth);
 }
 
 zcount_t zqueue_get_count(zqueue_t *q)
@@ -234,8 +307,8 @@ zaddr_t zqueue_pop_back(zqueue_t *q)
 
 zaddr_t zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base)
 {
+    zspace_t space = zqueue_buf_grow(q, 1);
     zcount_t count = zqueue_get_count(q);
-    zspace_t space = zqueue_get_space(q);
 
     if (0<=qidx && qidx<=count && space>=1)  
     {
@@ -267,7 +340,7 @@ zcount_t zqueue_insert_null_elems(
                     zqueue_t *dst, zqidx_t insert_before, 
                     zcount_t insert_count)
 {
-    zspace_t dst_space = zqueue_get_space(dst);
+    zspace_t dst_space = zqueue_buf_grow(dst, insert_count);
     zcount_t dst_count = zqueue_get_count(dst);
     
     if (0<=insert_before && insert_before<=dst_count && dst_space>=insert_count) 
@@ -484,7 +557,21 @@ void zqueue_quick_sort(zqueue_t *q, zq_cmp_func_t func)
 {
     zcount_t count = zqueue_get_count(q);
     if (count > 2) {
-        zqueue_quick_sort_iter(q, func, 0, count-1);
+        long long static_swap[8];
+        if (q->elem_size > sizeof(static_swap)) {
+            q->elem_swap = malloc(q->elem_size);
+        } else {
+            q->elem_swap = static_swap;
+        }
+        
+        if (q->elem_swap) {
+            zqueue_quick_sort_iter(q, func, 0, count-1);
+            if (q->elem_size > sizeof(static_swap)) {
+                SIM_FREEP(q->elem_swap);
+            }
+        } else {
+            xerr("%s() failed!\n", __FUNCTION__);
+        }
     }
 }
 
