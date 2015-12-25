@@ -40,58 +40,156 @@ static zqidx_t  zlist_addr_2_bidx_in_use(zlist_t *zl, zaddr_t addr);
 #define         zlist_get_elem_bidx     zlist_qidx_2_bidx_in_use
 
 
-zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth)
+/* buffer attach would reset the entire context */
+zcount_t zlist_buf_attach(zlist_t *zl, zaddr_t buf, uint32_t elem_size, uint32_t depth)
 {
-    zlist_t *zl = malloc(sizeof(zlist_t));
+    zqidx_t  qidx;
     zbidx_t *qidx_2_bidx = malloc(depth * sizeof(zbidx_t));
-    zaddr_t  elemq = malloc(depth * elem_size);
-    zqidx_t qidx;
 
-    if (!zl || !qidx_2_bidx || !elemq) {
-        xerr("<zlist>  %s failed\n", __FUNCTION__);
-        if (qidx_2_bidx) { free(qidx_2_bidx); }
-        if (elemq) { free(elemq); }
-        if (zl) { free(zl); }
+    if (!qidx_2_bidx) {
+        xerr("<zlist>  %s() failed\n", __FUNCTION__);
         return 0;
     }
-
+    
     zl->depth = depth;
     zl->count = 0;
     zl->elem_size = elem_size;
     zl->qidx_2_bidx = qidx_2_bidx;
-    zl->elem_array = elemq;
+    zl->elem_array = buf;
+    
+    zl->b_allocated = 0;
+    zl->b_allow_realloc = 0;
 
     for (qidx=0; qidx<(int)depth; ++qidx) { 
         qidx_2_bidx[qidx] = qidx;
     }
 
-    return zl;
+    return depth;
 }
 
-zlist_t *zlist_realloc(zlist_t *zl, uint32_t depth) 
+void zlist_buf_detach(zlist_t *zl)
 {
-    if ((int)depth>zl->depth) 
-    {
-        zqidx_t qidx;
+    SIM_FREEP(zl->qidx_2_bidx);
+    if (!zl->b_allocated) {
+        memset(zl, 0, sizeof(zl));
+    }
+}
 
+zaddr_t zlist_buf_malloc(zlist_t *zl, uint32_t elem_size, uint32_t depth, int b_allow_realloc)
+{
+    zaddr_t buf = malloc( elem_size * depth );
+    if (buf) {
+        zcount_t count = zlist_buf_attach(zl, buf, elem_size, depth);
+        if (count) {
+            zl->b_allocated = 1;
+            zl->b_allow_realloc = b_allow_realloc;
+            return buf;
+        } else {
+            SIM_FREEP(buf);
+        }
+    }
+    xerr("%s() failed!\n", __FUNCTION__);
+    return 0;
+}
+
+zaddr_t zlist_buf_realloc(zlist_t *zl, uint32_t depth, int b_allow_realloc)
+{
+    zcount_t count = zlist_get_count(zl);
+    if (zl->b_allocated && zl->b_allow_realloc) {
+        if (depth < count) {
+            xerr("data drop is not allowed in %s()!\n", __FUNCTION__);
+            return 0;
+        }
+
+        /* We are using bidx rather than elem_base. So the map between
+           qidx and elem_base won't change after realloc() */
         zbidx_t *bidxq = realloc(zl->qidx_2_bidx, depth * sizeof(zbidx_t));
         zaddr_t  elemq = realloc(zl->elem_array, depth * zl->elem_size);
-
-        //! bidxq[qidx] = qidx
-        for (qidx=zl->depth; qidx<(int)depth; ++qidx) { 
-            bidxq[qidx] = qidx;
+        
+        if (elemq && elemq) {
+            zqidx_t qidx;
+            for (qidx=zl->depth; qidx<(int)depth; ++qidx) { 
+                bidxq[qidx] = qidx;
+            }
+            zl->depth = depth;
+            zl->count = (count <= depth) ? count : depth;
+            zl->qidx_2_bidx = bidxq;
+            zl->elem_array = elemq;
+            zl->b_allocated = 1;
+            zl->b_allow_realloc = b_allow_realloc;
+            return elemq;
+        } else {
+            /* Realloc failture leads to no expansion, but no harm to existing
+               data. The entire list don't need to be destroied. */
+            //SIM_FREEP(bidxq);
+            //SIM_FREEP(elemq);
+            xerr("%s() failed!\n", __FUNCTION__);
         }
-        zl->depth = depth;
     }
+    return 0;
+}
 
-    return zl;
+/**
+ * Enlarge list buffer.
+ * In case of reallocation failure, the old buf is kept unchanged.
+ * 
+ * @param additional_count  the count of elem to be allocated
+ *                          in addition to zlist_get_count()
+ * @return new space after buf grow. 
+ */
+zspace_t zlist_buf_grow(zlist_t *zl, uint32_t additional_count)
+{
+    if (zl->b_allocated && zl->b_allow_realloc) {
+        zcount_t old_depth = zlist_get_depth(zl);
+        zcount_t new_depth = additional_count + zlist_get_count(zl);
+        if (new_depth > old_depth) {
+            zaddr_t new_addr = zlist_buf_realloc(zl, new_depth, 1);
+            if (!new_addr) {
+                xerr("%s() failed!\n", __FUNCTION__);
+            }
+        }
+    }
+    return zlist_get_space(zl);
+}
+
+void zlist_buf_free(zlist_t *zl)
+{
+    SIM_FREEP(zl->qidx_2_bidx);
+    if (zl->b_allocated && zl->elem_array) {
+        SIM_FREEP(zl->elem_array);
+    }
+}
+
+
+zlist_t *zlist_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc)
+{
+    zlist_t *zl = malloc(sizeof(zlist_t));
+    if (zl) {
+        zaddr_t base = zlist_buf_malloc(zl, elem_size, depth, b_allow_realloc);
+        if (base) {
+            return zl;
+        } else {
+            SIM_FREEP(zl);
+        }
+    }
+    xerr("<zlist>  %s failed\n", __FUNCTION__);
+    return 0;
+}
+
+zlist_t* zlist_malloc_s(uint32_t elem_size, uint32_t depth)
+{
+    return zlist_malloc(elem_size, depth, 0);
+}
+
+zlist_t* zlist_malloc_d(uint32_t elem_size, uint32_t depth)
+{
+    return zlist_malloc(elem_size, depth, 1);
 }
 
 void zlist_free(zlist_t *zl)
 {
     if (zl)  { 
-        if (zl->qidx_2_bidx) { free(zl->qidx_2_bidx); }
-        if (zl->elem_array)  { free(zl->elem_array);  }
+        zlist_buf_free(zl);
         free(zl);
     }
 }
@@ -344,8 +442,8 @@ zaddr_t zlist_pop_back(zlist_t *zl)
 zaddr_t zlist_insert_elem(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base)
 {
     zaddr_t  base  = 0;
+    zspace_t space = zlist_buf_grow(zl, 1);
     zcount_t count = zlist_get_count(zl);
-    zspace_t space = zlist_get_space(zl);
 
     if (0<=qidx && qidx<=count && space>=1) 
     {
@@ -373,7 +471,7 @@ zcount_t zlist_insert_null_elems(
                     zlist_t *dst, zqidx_t insert_before, 
                     zcount_t insert_count)
 {
-    zspace_t dst_space = zlist_get_space(dst);
+    zspace_t dst_space = zlist_buf_grow(dst, insert_count);
     zcount_t dst_count = zlist_get_count(dst);
 
     if (0<=insert_before && insert_before<=dst_count && dst_space>=insert_count) 

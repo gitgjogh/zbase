@@ -37,14 +37,38 @@ typedef struct zlist
 
     uint32_t    elem_size;
     zaddr_t     elem_array;
-
+    int         b_allocated;
+    int         b_allow_realloc; 
+    
 } zlist_t;
 
 
-zlist_t*    zlist_malloc(uint32_t elem_size, uint32_t depth);
-#define     ZLIST_MALLOC(type_t, depth)    zlist_malloc(sizeof(type_t), (depth))
-zlist_t*    zlist_realloc(zlist_t *zl, uint32_t depth);
-void        zlist_free(zlist_t *zl);
+zcount_t    zlist_buf_attach(zlist_t *zl, zaddr_t buf, uint32_t elem_size, uint32_t depth);
+void        zlist_buf_detach(zlist_t *zl);
+
+zaddr_t     zlist_buf_malloc(zlist_t *zl, uint32_t elem_size, uint32_t depth, int b_allow_realloc);
+zaddr_t     zlist_buf_realloc(zlist_t *zl, uint32_t depth, int b_allow_realloc);
+void        zlist_buf_free(zlist_t *zl);
+
+/**
+ * Enlarge list buffer.
+ * In case of reallocation failure, the old buf is kept unchanged.
+ * 
+ * @param additional_count  the count of elem to be allocated
+ *                          in addition to zlist_get_count()
+ * @return zlist_get_space() after buf grow. 
+ */
+zspace_t    zlist_buf_grow(zlist_t *q, uint32_t additional_count);
+
+
+zlist_t*    zlist_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc);
+zlist_t*    zlist_malloc_s(uint32_t elem_size, uint32_t depth);
+zlist_t*    zlist_malloc_d(uint32_t elem_size, uint32_t depth);
+#define     ZLIST_MALLOC_S(type_t, depth)    zlist_malloc_s(sizeof(type_t), (depth))
+#define     ZLIST_MALLOC_D(type_t, depth)    zlist_malloc_d(sizeof(type_t), (depth))
+void        zlist_free(zlist_t *q);
+
+
 zcount_t    zlist_get_depth(zlist_t *zl);
 zcount_t    zlist_get_count(zlist_t *zl);
 zspace_t    zlist_get_space(zlist_t *zl);

@@ -53,8 +53,8 @@ int zlist_test(int argc, char** argv)
     int item, idx;
     zaddr_t ret, popped;
 
-    zlist_t *q1 = ZLIST_MALLOC(int, 10);
-    zlist_t *q2 = ZLIST_MALLOC(int, 20);
+    zlist_t *q1 = ZLIST_MALLOC_D(int, 10);
+    zlist_t *q2 = ZLIST_MALLOC_S(int, 20);
     for (idx=1; idx<8; ++idx) {
         zlist_push_back(q1, SET_ITEM(10-idx));
         zlist_push_back(q2, SET_ITEM(10+idx));
