@@ -84,7 +84,10 @@ zqueue_t* zqueue_realloc(zqueue_t *q, uint32_t depth)
 
 void zqueue_free(zqueue_t *q)
 {
-    if (q)  { free(q); }
+    if (q) {
+        if (q->elem_array) { free(q->elem_array); }
+        free(q); 
+    }
 }
 
 zcount_t zqueue_get_count(zqueue_t *q)

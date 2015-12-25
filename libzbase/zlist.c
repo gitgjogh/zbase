@@ -91,8 +91,8 @@ void zlist_free(zlist_t *zl)
 {
     if (zl)  { 
         if (zl->qidx_2_bidx) { free(zl->qidx_2_bidx); }
-        if (zl->elem_array) { free(zl->elem_array); }
-        if (zl) { free(zl); }
+        if (zl->elem_array)  { free(zl->elem_array);  }
+        free(zl);
     }
 }
 
