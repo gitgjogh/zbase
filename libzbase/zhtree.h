@@ -53,7 +53,7 @@ typedef struct zhtree
     
 //private:    
     zaddr_t      root;
-    zaddr_t      wdir;              //<! current working directory
+    zaddr_t      wnode;             //<! current working node
 }zhtree_t;
 
 
@@ -68,22 +68,30 @@ void        zhtree_free(zhtree_t *h);
 
 int         zhtree_ret_flag(zhtree_t *h);
 zaddr_t     zhtree_get_root(zhtree_t *h);
-zaddr_t     zhtree_get_wdir(zhtree_t *h);
+zaddr_t     zhtree_get_wnode(zhtree_t *h);
 
 /**
  *  @param key_len  - If 0, @key_len is ignored, @key is null end str. 
  *                  - Else, @key_len is forced to be the length for @key 
  */
-zaddr_t     zhtree_get_node(zhtree_t *h, zht_node_t *father, const char *key, uint32_t key_len);
-zaddr_t     zhtree_set_node(zhtree_t *h, zht_node_t *father, const char *key, uint32_t key_len);
+zaddr_t     zhtree_get_child(zhtree_t *h, zht_node_t *parent, const char *key, uint32_t key_len);
+zaddr_t     zhtree_touch_child(zhtree_t *h, zht_node_t *parent, const char *key, uint32_t key_len);
 
 /**
  *  @param path - Could be either relative path or abspath 
  *  @param path_len - If 0, @path_len is ignored, @path is null end str. 
  *                  - Else, @path_len is forced to be the length for @path 
  */
-zaddr_t     zhtree_get_path(zhtree_t *h, const char *path, uint32_t path_len);
-zaddr_t     zhtree_set_path(zhtree_t *h, const char *path, uint32_t path_len);
+zaddr_t     zhtree_get_node(zhtree_t *h, const char *path, uint32_t path_len);
+zaddr_t     zhtree_touch_node(zhtree_t *h, const char *path, uint32_t path_len);
+
+/**
+ *  Change wdir according to @path. If @path is invalid, wdir will not change.
+ *  @param path_len - If 0, @path_len is ignored, @path is null end str. 
+ *                  - Else, @path_len is forced to be the length for @path 
+ *  @return - New wdir if @path is valid, or else 0 if @path is invalid.
+ */
+zaddr_t     zhtree_change_wnode(zhtree_t *h, const char *path, uint32_t path_len);
 
 
 /** iterators for traverse through node's children link */
@@ -109,7 +117,7 @@ zaddr_t     zht_child_iter_curr(zht_child_iter_t *iter);
  * create a zqueue<zht_node_*t> route from root to node
  * @return (zht_node_*t) <root ... node>, need to be free after use.
  */
-zqueue_t   *zhtree_create_route(zhtree_t *h, zht_node_t node);
+zqueue_t   *zhtree_create_route(zhtree_t *h, zht_node_t *node);
 void        zhtree_free_route(zqueue_t *route);
 void        zhtree_print_route(zqueue_t *route);
 int         zhtree_snprint_route(zqueue_t *route, char *str, int size);
@@ -121,7 +129,7 @@ typedef struct zhtree_route_iterator {
     zqueue_t    *route_stack;       /** zqueue_t<zht_node_t *> */
 }zht_route_iter_t;
 
-zht_route_iter_t    zht_route_open(zhtree_t *h, );
+zht_route_iter_t    zht_route_open(zhtree_t *h, zht_node_t *node);
 void                zht_route_close(zht_route_iter_t *iter);
 
 zaddr_t     zht_route_iter_last(zht_child_iter_t *iter);
