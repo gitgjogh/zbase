@@ -126,7 +126,8 @@ int jump_front(const char* str, const char* jumpset)
     return start;
 }
 
-int get_field_pos(const char* str, 
+static 
+int get_field_pos1(     char* str, 
                   const char* prejumpset, 
                   const char* delemiters,
                   int       * field_start)
@@ -147,7 +148,7 @@ int get_field_pos(const char* str,
         }
     }
 
-    if (field_start) {
+    if (c!=0 && field_start) {
         *field_start = start;
     }
 
@@ -160,10 +161,64 @@ int get_field_pos(const char* str,
     return end-start;
 }
 
-char *get_1st_field(char* str, const char* prejumpset, const char* delemiters, int *field_len)
+static 
+int get_field_pos2(     char* str, int len,
+                  const char* prejumpset, 
+                  const char* delemiters,
+                  int       * field_start)
+{
+    int c, start, end;
+    start = end = 0;
+    
+    if (!str) {
+        return 0;
+    }
+
+    if (len <= 0) {
+        return get_field_pos1(str,      prejumpset, delemiters, field_start);
+    }
+
+    if (prejumpset) 
+    {
+        for (start = 0; (c = str[start]) && start<len; ++start) {
+            if ( !strchr(prejumpset, c) ) {
+                break;
+            }
+        }
+    }
+
+    if (c!=0 && start<len && field_start) {
+        *field_start = start;
+    }
+
+    for (end = start; (c = str[end]) && end<len; ++end) {
+        if ( delemiters && strchr(delemiters, c) ) {
+            break;
+        }
+    }
+    
+    return end-start;
+}
+
+int get_field_pos(      char* str, int len,
+                  const char* prejumpset, 
+                  const char* delemiters,
+                  int       * field_start)
+{
+    if (len <= 0) {
+        return get_field_pos1(str,      prejumpset, delemiters, field_start);
+    } else {
+        return get_field_pos2(str, len, prejumpset, delemiters, field_start);
+    }
+}
+
+char *get_1st_field(char* str,  int len,
+                    const char* prejumpset, 
+                    const char* delemiters,
+                    int       * field_len)
 {
     int subpos = 0;
-    int sublen = get_field_pos(str, prejumpset, delemiters, &subpos);
+    int sublen = get_field_pos(str, len, prejumpset, delemiters, &subpos);
     if (field_len) {
         *field_len = sublen;
     }
@@ -212,7 +267,7 @@ char *str_iter_1st_field(str_iter_t *iter,
         return 0;
     }
     
-    iter->substr = get_1st_field(iter->str, prejumpset, delemiters, &iter->sublen);
+    iter->substr = get_1st_field(iter->str, iter->len, prejumpset, delemiters, &iter->sublen);
     
     return iter->substr;
 }
@@ -225,7 +280,7 @@ char *str_iter_next_field(str_iter_t *iter,
     if (!iter->substr || !iter->sublen) {
         return 0;
     }
-    iter->substr = get_1st_field(iter->substr + iter->sublen + 1, 
+    iter->substr = get_1st_field(iter->substr + iter->sublen + 1, iter->len, 
                                 prejumpset, delemiters, &iter->sublen);
     return iter->substr;
 }

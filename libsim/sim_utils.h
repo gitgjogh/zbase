@@ -162,12 +162,12 @@ int     jump_front(const char* str, const char* jumpset);
 /**
  * @return field_len
  */
-int     get_field_pos(const char* str, 
+int     get_field_pos(    char* str, int len,
                     const char* prejumpset, 
                     const char* delemiters,
                     int       * field_pos);
 
-char*   get_1st_field(    char* str, 
+char*   get_1st_field(    char* str, int len,
                     const char* prejumpset, 
                     const char* delemiters, 
                     int       * field_len);

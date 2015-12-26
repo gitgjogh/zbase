@@ -23,8 +23,8 @@
 
 static uint32_t zht_nstr_time33(uint32_t type, const char *key, uint32_t key_len);
 static uint32_t zht_cstr_time33(uint32_t type, const char *key, uint32_t *key_len);
-static zaddr_t zhtree_add_to_children(zhtree_t *h, zht_node_t *parent, zht_node_t *node);
 
+static zht_node_t *zhtree_mount_new_child(zhtree_t *h, zht_node_t *parent, zht_node_t *node);
 static zht_node_t *zhtree_find_in_children(zhtree_t *h, zht_node_t *parent, 
                             zh_hval_t hash, const char *key, uint32_t key_len);
 static zht_node_t *zhtree_find_in_collision(zhtree_t *h, zht_node_t *parent, 
@@ -62,7 +62,7 @@ zhtree_t *zhtree_malloc(uint32_t node_size, uint32_t depth_log2)
     memset(root, 0, sizeof(zht_node_t));
     root->key = name;
     zh->root = root;
-    zh->wdir = root;
+    zh->wnode = root;
 
     return zh;
 }
@@ -110,6 +110,12 @@ zaddr_t zhtree_get_root(zhtree_t *h)
 {
     return h->root;
 }
+
+zaddr_t zhtree_get_wnode(zhtree_t *h)
+{
+    return h->wnode;
+}
+
 
 int zhtree_ret_flag(zhtree_t *h)
 {
@@ -166,6 +172,11 @@ int zhtree_is_one_child(zhtree_t *h, zht_node_t *parent, zht_node_t *node)
     return 0;
 }
 
+/** 
+ *  Similar to @func zhtree_is_one_child(). Currently useless because 
+ *  hash is thought to be more efficient. 
+ *  Just to show the diffrence between children link and collision link.
+ */
 static
 zht_node_t *zhtree_find_in_children(zhtree_t *h, zht_node_t *parent, 
                             zh_hval_t hash, const char *key, uint32_t key_len)
@@ -202,13 +213,15 @@ zht_node_t *zhtree_find_in_collision(zhtree_t *h, zht_node_t *parent,
 }
 
 static
-zaddr_t zhtree_touch_node(zhtree_t *h, zht_node_t *parent,
+zaddr_t zhtree_touch_child_internal(zhtree_t *h, zht_node_t *parent,
                         const char  *key, uint32_t key_len, 
                         int b_insert)
 {
     uint32_t hash = key_len ? zht_nstr_time33(parent->hash, key, key_len)
                             : zht_cstr_time33(parent->hash, key, &key_len);
 
+    /* we don't use @func zhtree_find_in_children() 
+       because hash is thought to be faster */
     zht_node_t *node = zhtree_find_in_collision(h, parent, hash, key, key_len);
     if (node) {
         h->ret_flag |= ZHASH_FOUND;
@@ -239,15 +252,18 @@ zaddr_t zhtree_touch_node(zhtree_t *h, zht_node_t *parent,
         h->hash_tbl[GETLSBS(hash, h->depth_log2)] = node;
 
         /* insert to children link */
-        zhtree_add_to_children(h, parent, node);
+        zhtree_mount_new_child(h, parent, node);
         return node;
     }
 
     return 0;
 }
 
+/**
+ * mount new created node to parent
+ */
 static
-zaddr_t zhtree_add_to_children(zhtree_t *h, zht_node_t *parent, zht_node_t *node)
+zht_node_t *zhtree_mount_new_child(zhtree_t *h, zht_node_t *parent, zht_node_t *node)
 {
     assert(zhtree_is_node_in_use(h, parent));
     assert(zhtree_is_node_in_use(h, node));
@@ -271,20 +287,23 @@ zaddr_t zhtree_add_to_children(zhtree_t *h, zht_node_t *parent, zht_node_t *node
     return node;
 }
 
-zaddr_t zhtree_get_node(zhtree_t *h, zht_node_t *father, 
+zaddr_t zhtree_get_child(zhtree_t *h, zht_node_t *parent, 
                         const char *key, uint32_t keylen)
 {
-    return zhtree_touch_node(h, father, key, keylen, 0);
+    assert(zhtree_is_node_in_use(h, parent));
+    return zhtree_touch_child_internal(h, parent, key, keylen, 0);
 }
 
-zaddr_t zhtree_set_node(zhtree_t *h, zht_node_t *father, 
+zaddr_t zhtree_touch_child(zhtree_t *h, zht_node_t *parent, 
                         const char *key, uint32_t keylen)
 {
-    return zhtree_touch_node(h, father, key, keylen, 1);
+    assert(zhtree_is_node_in_use(h, parent));
+    return zhtree_touch_child_internal(h, parent, key, keylen, 1);
 }
 
 static
-zaddr_t zhtree_touch_path(zhtree_t *h, const char *path, uint32_t path_len, int b_insert)
+zaddr_t zhtree_touch_node_internal(zhtree_t *h, const char *path, 
+                                   uint32_t path_len, int b_insert)
 {
     if (path==0 || path_len==0) {
         xerr("<zhtree> null path\n");
@@ -299,11 +318,11 @@ zaddr_t zhtree_touch_path(zhtree_t *h, const char *path, uint32_t path_len, int 
         parent = zhtree_get_root(h);
         pos += 1;
     } else {
-        parent = zhtree_get_wdir(h);
+        parent = zhtree_get_wnode(h);
     }
     
     char *substr = 0;
-    str_iter_t iter = str_iter_init(path, 0);
+    str_iter_t iter = str_iter_init(path, path_len);
     WHILE_GET_FIELD(iter, "", "/", substr) 
     {
         int sublen = STR_ITER_GET_SUBLEN(iter);
@@ -312,7 +331,7 @@ zaddr_t zhtree_touch_path(zhtree_t *h, const char *path, uint32_t path_len, int 
         } else if (sublen == 2 && substr[0] == '.' && substr[1] == '.') {
             child = child->parent;
         } else {
-            child = zhtree_touch_node(h, parent, substr, sublen, b_insert);
+            child = zhtree_touch_child_internal(h, parent, substr, sublen, b_insert);
         }
         
         if (child) {
@@ -325,13 +344,23 @@ zaddr_t zhtree_touch_path(zhtree_t *h, const char *path, uint32_t path_len, int 
     return child;
 }
 
-zaddr_t zhtree_get_path(zhtree_t *h, const char *path, uint32_t path_len)
+zaddr_t zhtree_get_node(zhtree_t *h, const char *path, uint32_t path_len)
 {
-    return zhtree_touch_path(h, path, path_len, 0);
+    return zhtree_touch_node_internal(h, path, path_len, 0);
 }
 
-zaddr_t zhtree_set_path(zhtree_t *h, const char *path, uint32_t path_len)
+zaddr_t zhtree_touch_node(zhtree_t *h, const char *path, uint32_t path_len)
 {
-    return zhtree_touch_path(h, path, path_len, 1);
+    return zhtree_touch_node_internal(h, path, path_len, 1);
 }
 
+zaddr_t zhtree_change_wnode(zhtree_t *h, const char *path, uint32_t path_len)
+{
+    zaddr_t node = zhtree_get_node(h, path, path_len);
+    if (node) {
+        h->wnode = node;
+        return h->wnode;
+    } else {
+        return 0;
+    }
+}
