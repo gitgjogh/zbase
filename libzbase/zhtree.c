@@ -364,3 +364,128 @@ zaddr_t zhtree_change_wnode(zhtree_t *h, const char *path, uint32_t path_len)
         return 0;
     }
 }
+
+zqueue_t *zhtree_create_route(zhtree_t *h, zht_node_t* node)
+{
+    if (!node || zhtree_is_node_in_use(h, node)) {
+        return 0;
+    }
+    
+    #define INIT_ROUTE_DEPTH 64
+    
+    zqueue_t * q = ZQUEUE_MALLOC_D(zht_node_t*, INIT_ROUTE_DEPTH);
+    if (!q) {
+        xerr("<zhtree> %s() failed:1!\n", __FUNCTION__);
+        return 0;
+    }
+
+    while (node) {
+        zaddr_t ret = zqueue_push_back(q, &node);
+        if (!ret) {
+            xerr("<zhtree> %s() failed:2!\n", __FUNCTION__);
+            zqueue_free(q);
+            return 0;
+        }
+        if (node != zhtree_get_root(h)) {
+            node = node->parent;
+        } else {
+            break;
+        }
+    }
+    
+    return q;
+}
+
+void zhtree_free_route(zqueue_t *route)
+{
+    zqueue_free(route);
+}
+
+static
+void str_printf(zqidx_t idx, zaddr_t elem_base)
+{
+    xprint("%s", elem_base);
+}
+
+void zhtree_print_route(zqueue_t *route)
+{
+    zqueue_print(route, 0, str_printf, ".", "\n");
+}
+
+/**
+ * @return The space (not counting the null end character) need for storing
+ *         the entire route.
+ */
+int zhtree_snprint_route(zqueue_t *route, char *str, int size)
+{
+    zcount_t last = zqueue_get_count(route) - 1;
+    int left = size, need = 0;
+    for (; last>=0; --last)
+    {
+        zaddr_t base = zqueue_get_elem_base(route, last - 1);
+        zht_node_t *node = *(zht_node_t**)base;
+        int keylen = strlen(node->key);
+        if (need < size) {
+            if (left > keylen) {
+                strcpy(str, node->key);
+                str  += keylen;
+                left -= keylen;
+            } else {
+                strncpy(str, node->key, left - 1);
+                str  += (left - 1);
+                left  = 1;           /* for null terminate */
+            }
+        }
+        need += keylen;
+    }
+    str[0] = 0;
+
+    return need;
+}
+
+zht_route_iter_t zht_route_open(zhtree_t *h, zht_node_t *last)
+{
+    zht_route_iter_t iter = {h, last, 0, 0};
+    iter.route = zhtree_create_route(h, last);
+    return iter;
+}
+
+void zht_route_close(zht_route_iter_t *iter)
+{
+    if (iter && iter->route) {
+        zqueue_free(iter->route);
+    }
+    iter->route = 0;
+}
+
+zaddr_t zht_route_iter_root(zht_route_iter_t *iter)
+{
+    if (iter->route) {
+        iter->iter_idx = zqueue_get_count(iter->route);
+    }
+    return zht_route_iter_next(iter);
+}
+
+zaddr_t zht_route_iter_next(zht_route_iter_t *iter)
+{
+    if (iter->route) {
+        zaddr_t base = zqueue_get_elem_base(iter->route, --iter->iter_idx);
+        return base ? *(zht_node_t**)base : 0;
+    }
+    return 0;
+}
+
+zaddr_t zht_route_iter_last(zht_route_iter_t *iter)
+{
+    iter->iter_idx = -1;
+    return zht_route_iter_prev(iter);
+}
+
+zaddr_t zht_route_iter_prev(zht_route_iter_t *iter)
+{
+    if (iter->route) {
+        zaddr_t base = zqueue_get_elem_base(iter->route, ++iter->iter_idx);
+        return base ? *(zht_node_t**)base : 0;
+    }
+    return 0;
+}

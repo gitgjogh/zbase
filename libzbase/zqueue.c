@@ -649,14 +649,16 @@ void zqueue_print(zqueue_t *q, const char *q_name, zq_print_func_t func,
     zqidx_t qidx;
     zcount_t count = zqueue_get_count(q);
 
-    zqueue_print_info(q, q_name);
+    if (q_name) {
+        zqueue_print_info(q, q_name);
+    }
 
     if (func==0) { 
         xerr("<zqueue> Invalid print function!\n");
         return; 
     }
 
-    xprint(" [", q_name);
+    xprint(" [");
     for (qidx = 0; qidx < count; ++ qidx)
     {
         zaddr_t base = zqueue_get_elem_base(q, qidx);

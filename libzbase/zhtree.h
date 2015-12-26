@@ -126,22 +126,24 @@ int         zhtree_snprint_route(zqueue_t *route, char *str, int size);
 typedef struct zhtree_route_iterator {
     zhtree_t    *h;
     zht_node_t  *last;
-    zqueue_t    *route_stack;       /** zqueue_t<zht_node_t *> */
+    zqueue_t    *route;             /** zqueue_t<last ... root> */
+    zqidx_t      iter_idx;
 }zht_route_iter_t;
 
 zht_route_iter_t    zht_route_open(zhtree_t *h, zht_node_t *node);
 void                zht_route_close(zht_route_iter_t *iter);
 
-zaddr_t     zht_route_iter_last(zht_child_iter_t *iter);
-zaddr_t     zht_route_iter_up(zht_child_iter_t *iter);
-#define     WHILE_ZHT_ROUTE_UP(iter, node) \
-    for (node = zht_route_iter_end(&iter); node; node = zht_route_iter_up(&iter))
-
-zaddr_t     zht_route_iter_root(zht_child_iter_t *iter);
-zaddr_t     zht_route_iter_down(zht_child_iter_t *iter);
+zaddr_t     zht_route_iter_root(zht_route_iter_t *iter);
+zaddr_t     zht_route_iter_next(zht_route_iter_t *iter);
 #define     WHILE_ZHT_ROUTE_DOWN(iter, node) \
-    for (node = zht_route_iter_root(&iter); node; node = zht_route_iter_down(&iter))
-        
+    for (node = zht_route_iter_root(&iter); node; node = zht_route_iter_next(&iter))
+
+zaddr_t     zht_route_iter_last(zht_route_iter_t *iter);
+zaddr_t     zht_route_iter_prev(zht_route_iter_t *iter);
+#define     WHILE_ZHT_ROUTE_UP(iter, node) \
+    for (node = zht_route_iter_end(&iter); node; node = zht_route_iter_prev(&iter))
+
+
 
 /** iterators */
 typedef struct zhtree_iterator {
