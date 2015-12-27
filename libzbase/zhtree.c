@@ -396,33 +396,19 @@ zqueue_t *zhtree_create_route(zhtree_t *h, zht_node_t* node)
     return q;
 }
 
-void zhtree_free_route(zqueue_t *route)
-{
-    zqueue_free(route);
-}
 
-static
-void str_printf(zqidx_t idx, zaddr_t elem_base)
-{
-    xprint("%s", elem_base);
-}
-
-void zhtree_print_route(zqueue_t *route)
-{
-    zqueue_print(route, 0, str_printf, ".", "\n");
-}
 
 /**
  * @return The space (not counting the null end character) need for storing
- *         the entire route.
+ *         the entire nodeq.
  */
-int zhtree_snprint_route(zqueue_t *route, char *str, int size)
+int zhtree_snprint_route(zqueue_t *nodeq, char *str, int size)
 {
-    zcount_t last = zqueue_get_count(route) - 1;
+    zcount_t last = zqueue_get_count(nodeq) - 1;
     int left = size, need = 0;
     for (; last>=0; --last)
     {
-        zaddr_t base = zqueue_get_elem_base(route, last - 1);
+        zaddr_t base = zqueue_get_elem_base(nodeq, last - 1);
         zht_node_t *node = *(zht_node_t**)base;
         int keylen = strlen(node->key);
         if (need < size) {
@@ -443,49 +429,153 @@ int zhtree_snprint_route(zqueue_t *route, char *str, int size)
     return need;
 }
 
-zht_route_iter_t zht_route_open(zhtree_t *h, zht_node_t *last)
+zht_path_t zht_path_open(zhtree_t *h, zht_node_t *node)
 {
-    zht_route_iter_t iter = {h, last, 0, 0};
-    iter.route = zhtree_create_route(h, last);
+    zht_path_t iter = {h, 0, 0 ,0};
+    if (!h || !node || !zhtree_is_node_in_use(h, node)) {
+        return iter;
+    }
+
+    #define INIT_ROUTE_DEPTH 64
+    iter.nodeq = ZQUEUE_MALLOC_D(zht_node_t*, INIT_ROUTE_DEPTH);
+    if (!iter.nodeq) {
+        xerr("<zhtree> %s() failed:1!\n", __FUNCTION__);
+        return iter;
+    }
+
+    while (node) {
+        zaddr_t ret = zqueue_push_back(iter.nodeq, &node);
+        if (!ret) {
+            xerr("<zhtree> %s() failed:2!\n", __FUNCTION__);
+            zqueue_free(iter.nodeq);
+            return iter;
+        }
+        if (node != zhtree_get_root(h)) {
+            node = node->parent;
+        } else {
+            break;
+        }
+    }
+
+    iter.h = h;
+    iter.last = node;
+
     return iter;
 }
 
-void zht_route_close(zht_route_iter_t *iter)
+int zht_path_assert(zht_path_t *iter)
 {
-    if (iter && iter->route) {
-        zqueue_free(iter->route);
+    if (iter && iter->nodeq) {
+        return 1;
     }
-    iter->route = 0;
+    return 0;
 }
 
-zaddr_t zht_route_iter_root(zht_route_iter_t *iter)
+void zht_path_close(zht_path_t *iter)
 {
-    if (iter->route) {
-        iter->iter_idx = zqueue_get_count(iter->route);
+    if (iter && iter->nodeq) {
+        zqueue_free(iter->nodeq);
     }
-    return zht_route_iter_next(iter);
+    iter->nodeq = 0;
 }
 
-zaddr_t zht_route_iter_next(zht_route_iter_t *iter)
+zaddr_t zht_path_iter_root(zht_path_t *iter)
 {
-    if (iter->route) {
-        zaddr_t base = zqueue_get_elem_base(iter->route, --iter->iter_idx);
+    if (iter->nodeq) {
+        iter->iter_idx = zqueue_get_count(iter->nodeq);
+    }
+    return zht_path_iter_next(iter);
+}
+
+zaddr_t zht_path_iter_next(zht_path_t *iter)
+{
+    if (iter->nodeq) {
+        zaddr_t base = zqueue_get_elem_base(iter->nodeq, --iter->iter_idx);
         return base ? *(zht_node_t**)base : 0;
     }
     return 0;
 }
 
-zaddr_t zht_route_iter_last(zht_route_iter_t *iter)
+zaddr_t zht_path_iter_last(zht_path_t *iter)
 {
     iter->iter_idx = -1;
-    return zht_route_iter_prev(iter);
+    return zht_path_iter_prev(iter);
 }
 
-zaddr_t zht_route_iter_prev(zht_route_iter_t *iter)
+zaddr_t zht_path_iter_prev(zht_path_t *iter)
 {
-    if (iter->route) {
-        zaddr_t base = zqueue_get_elem_base(iter->route, ++iter->iter_idx);
+    if (iter->nodeq) {
+        zaddr_t base = zqueue_get_elem_base(iter->nodeq, ++iter->iter_idx);
         return base ? *(zht_node_t**)base : 0;
     }
     return 0;
 }
+
+void zht_path_print(zht_path_t *iter)
+{
+    if (!iter || !iter->nodeq) {
+        return;
+    }
+    
+    zht_node_t *node = 0;
+    WHILE_ZHT_PATH_DOWN(iter, node)
+    {
+        xprint("%s", node->key);
+        if (node!=iter->last) {
+            xprint(".");
+        }
+    }
+}
+
+int  zht_path_snprint(zht_path_t *iter, char *str, int size)
+{
+    if (!iter || !iter->nodeq) {
+        if (str && size) {
+            str[0]=0;
+        }
+        return 0;
+    }
+    
+    int left = size, need = 0;
+    zht_node_t *node = 0;
+    WHILE_ZHT_PATH_DOWN(iter, node)
+    {
+        int keylen = strlen(node->key);
+        if (need < size) {
+            if (left > keylen) {
+                strcpy(str, node->key);
+                str  += keylen;
+                left -= keylen;
+            } else {
+                strncpy(str, node->key, left - 1);
+                str  += (left - 1);
+                left  = 1;          /* for null terminate */
+            }
+        }
+        need += keylen;             /* The space needed */
+    }
+    str[0] = 0;
+
+    return need;
+}
+
+void zht_print_full_path(zhtree_t *h, zht_node_t *node)
+{
+    zht_path_t path = zht_path_open(h, node);
+    if (zht_path_assert(&path)) {
+        zht_path_print(&path);
+    }
+    zht_path_close(&path);
+}
+
+int  zht_snprint_full_path(zhtree_t *h, zht_node_t *node, char *str, int size)
+{
+    int ret = 0;
+    zht_path_t path = zht_path_open(h, node);
+    if (zht_path_assert(&path)) {
+        zht_path_snprint(&path, str, size);
+    }
+    zht_path_close(&path);
+    return ret;
+}
+

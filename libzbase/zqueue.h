@@ -58,6 +58,7 @@ zqueue_t*   zqueue_malloc_d(uint32_t elem_size, uint32_t depth);
 void        zqueue_free(zqueue_t *q);
 
 void        zqueue_memzero(zqueue_t *q);
+void        zqueue_clear(zqueue_t *q);
 
 zcount_t    zqueue_get_depth(zqueue_t *q);
 zcount_t    zqueue_get_count(zqueue_t *q);

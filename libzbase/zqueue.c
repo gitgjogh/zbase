@@ -141,8 +141,15 @@ zqueue_t* zqueue_malloc_d(uint32_t elem_size, uint32_t depth)
 
 void zqueue_memzero(zqueue_t *q) 
 {
-    if (q) {
+    if (q && q->elem_array) {
         memset(q->elem_array, 0, q->elem_size * q->depth);
+    }
+}
+
+void zqueue_clear(zqueue_t *q) 
+{
+    if (q) {
+        q->count = 0;
     }
 }
 

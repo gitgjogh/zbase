@@ -113,35 +113,38 @@ zaddr_t     zht_child_iter_curr(zht_child_iter_t *iter);
     for (child = zht_child_iter_1st(&iter); child; child = zht_child_iter_next(&iter))
 
 
-/**
- * create a zqueue<zht_node_*t> route from root to node
- * @return (zht_node_*t) <root ... node>, need to be free after use.
- */
-zqueue_t   *zhtree_create_route(zhtree_t *h, zht_node_t *node);
-void        zhtree_free_route(zqueue_t *route);
-void        zhtree_print_route(zqueue_t *route);
-int         zhtree_snprint_route(zqueue_t *route, char *str, int size);
-
-/** iterators for traverse through the route from root to last */
-typedef struct zhtree_route_iterator {
+/** iterators for traverse through the path from root to last */
+typedef struct zhtree_path_iterator {
     zhtree_t    *h;
     zht_node_t  *last;
-    zqueue_t    *route;             /** zqueue_t<last ... root> */
+    zqueue_t    *nodeq;             /** zqueue_t<zht_node_t*> [last ... root] */
     zqidx_t      iter_idx;
-}zht_route_iter_t;
+}zht_path_t;
 
-zht_route_iter_t    zht_route_open(zhtree_t *h, zht_node_t *node);
-void                zht_route_close(zht_route_iter_t *iter);
+zht_path_t  zht_path_open(zhtree_t *h, zht_node_t *node);
+int         zht_path_assert(zht_path_t *iter);
+void        zht_path_close(zht_path_t *iter);
 
-zaddr_t     zht_route_iter_root(zht_route_iter_t *iter);
-zaddr_t     zht_route_iter_next(zht_route_iter_t *iter);
-#define     WHILE_ZHT_ROUTE_DOWN(iter, node) \
-    for (node = zht_route_iter_root(&iter); node; node = zht_route_iter_next(&iter))
+zaddr_t     zht_path_iter_root(zht_path_t *iter);
+zaddr_t     zht_path_iter_next(zht_path_t *iter);
+#define     WHILE_ZHT_PATH_DOWN(iter, node) \
+    for (node = zht_path_iter_root(iter); node; node = zht_path_iter_next(iter))
 
-zaddr_t     zht_route_iter_last(zht_route_iter_t *iter);
-zaddr_t     zht_route_iter_prev(zht_route_iter_t *iter);
-#define     WHILE_ZHT_ROUTE_UP(iter, node) \
-    for (node = zht_route_iter_end(&iter); node; node = zht_route_iter_prev(&iter))
+zaddr_t     zht_path_iter_last(zht_path_t *iter);
+zaddr_t     zht_path_iter_prev(zht_path_t *iter);
+#define     WHILE_ZHT_PATH_UP(iter, node) \
+    for (node = zht_path_iter_last(iter); node; node = zht_path_iter_prev(iter))
+
+void        zht_path_print(zht_path_t *iter);
+void        zht_print_full_path(zhtree_t *h, zht_node_t *node);
+
+/**
+ * @return 0 when failed. Or the space (not counting the null end) needed 
+ *         for storing the entire route. In the 2nd case, the return value
+ *         can be greater than @size if @size of @str is no sufficient.
+ */
+int         zht_path_snprint(zht_path_t *iter, char *str, int size);
+int         zht_snprint_full_path(zhtree_t *h, zht_node_t *node, char *str, int size);
 
 
 
