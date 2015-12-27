@@ -136,7 +136,6 @@ zht_child_iter_t   zht_child_iter_init(zht_node_t *parent)
 {
     zht_child_iter_t iter = {
         parent, 
-        parent ? parent->child : 0, 
         parent ? parent->child : 0
     };
     return iter;
@@ -144,17 +143,36 @@ zht_child_iter_t   zht_child_iter_init(zht_node_t *parent)
 zaddr_t zht_child_iter_1st(zht_child_iter_t *iter)
 {
     if (iter->parent) {
-        return iter->curr = iter->direct = iter->parent->child;
+        return iter->curr = iter->parent->child;
     }
-    return 0;
+    return (iter->curr = 0);
 }
 zaddr_t zht_child_iter_next(zht_child_iter_t *iter)
 {
-    if (iter->curr) {
+    if (iter->parent && iter->curr) {
         iter->curr = iter->curr->right;
-        return (iter->curr == iter->direct) ? 0 : iter->curr;
+        if (iter->curr != iter->parent->child) {
+            return iter->curr;
+        }
     }
-    return 0;
+    return (iter->curr = 0);
+}
+zaddr_t zht_child_iter_last(zht_child_iter_t *iter)
+{
+    if (iter->parent) {
+        return iter->curr = iter->parent->child->left;
+    }
+    return (iter->curr = 0);
+}
+zaddr_t zht_child_iter_prev(zht_child_iter_t *iter)
+{
+    if (iter->parent && iter->curr) {
+        if (iter->curr != iter->parent->child) {
+            iter->curr = iter->curr->left;
+            return iter->curr;
+        }
+    }
+    return (iter->curr = 0);
 }
 zaddr_t zht_child_iter_curr(zht_child_iter_t *iter)
 {
@@ -577,5 +595,127 @@ int  zht_snprint_full_path(zhtree_t *h, zht_node_t *node, char *str, int size)
     }
     zht_path_close(&path);
     return ret;
+}
+
+
+zht_iter_t  zhtree_iter_open(zhtree_t *h)
+{
+    zht_iter_t iter = {h, 0, 0};
+    if (!h || !h->root) {
+        return iter;
+    }
+
+    #define INIT_ROUTE_DEPTH 64
+    iter.iterq = ZQUEUE_MALLOC_D(zht_child_iter_t, INIT_ROUTE_DEPTH);
+    if (!iter.iterq) {
+        xerr("<zhtree> %s() failed:1!\n", __FUNCTION__);
+        return iter;
+    }
+
+    iter.curr = h->root;
+
+    return iter;
+}
+
+int         zhtree_iter_assert(zht_iter_t *iter)
+{
+    if (iter && iter->iterq) {
+        return 1;
+    }
+    return 0;
+}
+
+void        zhtree_iter_close(zht_iter_t *iter)
+{
+    if (iter && iter->iterq) {
+        zqueue_free(iter->iterq);
+    }
+    iter->iterq = 0;
+}
+
+zaddr_t     zhtree_iter_root(zht_iter_t *iter)
+{
+    zqueue_clear(iter->iterq);
+    iter->curr = iter->h->root;
+    return iter->curr;
+}
+
+static
+zaddr_t     zhtree_iter_right_up(zht_iter_t *iter)
+{
+    if ( zqueue_get_count(iter->iterq) ) 
+    {
+        zht_child_iter_t *parent_context = zqueue_get_back_base(iter->iterq);
+        iter->curr = zht_child_iter_next(parent_context);   // next sibling
+        if (iter->curr) {
+            return iter->curr;
+        } else {
+            zqueue_pop_back(iter->iterq);
+            return zhtree_iter_right_up(iter);
+        }
+    }
+
+    return (iter->curr = 0);
+}
+
+zaddr_t     zhtree_iter_next(zht_iter_t *iter)
+{
+    if (iter->curr) {
+        return 0;
+    }
+    
+    if ( iter->curr->child ) {
+        zht_child_iter_t child_iter = zht_child_iter_init(iter->curr);
+        zht_child_iter_t *p_child_iter = zqueue_push_back(iter->iterq, &child_iter);
+        iter->curr = zht_child_iter_1st(p_child_iter);
+        return iter->curr;
+    } else if ( zqueue_get_count(iter->iterq) ) {
+        return zhtree_iter_right_up(iter);
+    }
+
+    return (iter->curr = 0);
+}
+
+zaddr_t     zhtree_iter_back(zht_iter_t *iter)
+{
+    zqueue_clear(iter->iterq);
+    iter->curr = iter->h->root;
+    
+    while (iter->curr && iter->curr->child)
+    {
+        zht_child_iter_t child_iter = zht_child_iter_init(iter->curr);
+        zht_child_iter_t *p_child_iter = zqueue_push_back(iter->iterq, &child_iter);
+        iter->curr = zht_child_iter_last(p_child_iter);
+    }
+    
+    return (iter->curr);
+}
+
+zaddr_t     zhtree_iter_prev(zht_iter_t *iter)
+{
+    if (iter->curr) {
+        return 0;
+    }
+    
+    if ( zqueue_get_count(iter->iterq) ) 
+    {
+        zht_child_iter_t *parent_context = zqueue_get_back_base(iter->iterq);
+        iter->curr = zht_child_iter_prev(parent_context);   // prev sibling
+        if (!iter->curr) {
+            zqueue_pop_back(iter->iterq);
+            iter->curr = parent_context->parent;
+            return iter->curr;
+        } else {
+            //goto last of the curr subtree
+            while (iter->curr->child) {
+                zht_child_iter_t child_iter = zht_child_iter_init(iter->curr);
+                zht_child_iter_t *p_child_iter = zqueue_push_back(iter->iterq, &child_iter);
+                iter->curr = zht_child_iter_last(p_child_iter);
+            }
+            return iter->curr;
+        }
+    }
+
+    return (iter->curr = 0);
 }
 

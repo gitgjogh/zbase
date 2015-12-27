@@ -97,13 +97,14 @@ zaddr_t     zhtree_change_wnode(zhtree_t *h, const char *path, uint32_t path_len
 /** iterators for traverse through node's children link */
 typedef struct zhtree_children_iterator {
     zht_node_t  *parent;
-    zht_node_t  *direct;        /** parent->child */
     zht_node_t  *curr;
 }zht_child_iter_t;
 
 zht_child_iter_t   zht_child_iter_init(zht_node_t *parent);
 zaddr_t     zht_child_iter_1st(zht_child_iter_t *iter);
 zaddr_t     zht_child_iter_next(zht_child_iter_t *iter);
+zaddr_t     zht_child_iter_last(zht_child_iter_t *iter);
+zaddr_t     zht_child_iter_prev(zht_child_iter_t *iter);
 zaddr_t     zht_child_iter_curr(zht_child_iter_t *iter);
 
 #define FOR_ZHT_CHILD_IN(iter) \
@@ -151,11 +152,15 @@ int         zht_snprint_full_path(zhtree_t *h, zht_node_t *node, char *str, int 
 /** iterators */
 typedef struct zhtree_iterator {
     zhtree_t    *h;
-    zqidx_t      iter_idx;
+    zqueue_t    *iterq;         /** zqueue_t<zht_child_iter_t*> [root...] */
+    zht_node_t  *curr;
 }zht_iter_t;
 
-zh_iter_t   zhtree_iter(zhtree_t *h);
-zaddr_t     zhtree_iter_front(zht_iter_t *iter);
+zht_iter_t  zhtree_iter_open(zhtree_t *h);
+int         zhtree_iter_assert(zht_iter_t *iter);
+void        zhtree_iter_close(zht_iter_t *iter);
+
+zaddr_t     zhtree_iter_root(zht_iter_t *iter);
 zaddr_t     zhtree_iter_next(zht_iter_t *iter);
 zaddr_t     zhtree_iter_back(zht_iter_t *iter);
 zaddr_t     zhtree_iter_prev(zht_iter_t *iter);
