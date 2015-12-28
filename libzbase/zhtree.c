@@ -323,7 +323,7 @@ static
 zaddr_t zhtree_touch_node_internal(zhtree_t *h, const char *path, 
                                    uint32_t path_len, int b_insert)
 {
-    if (path==0 || path_len==0) {
+    if (path==0) {
         xerr("<zhtree> null path\n");
         return 0;
     }
@@ -334,7 +334,8 @@ zaddr_t zhtree_touch_node_internal(zhtree_t *h, const char *path,
     zht_node_t *child = 0;
     if (path[0]=='/') {
         parent = zhtree_get_root(h);
-        pos += 1;
+        path += 1;
+        path_len = path_len > 0 ? path_len - 1 : 0;
     } else {
         parent = zhtree_get_wnode(h);
     }
