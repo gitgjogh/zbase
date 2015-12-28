@@ -658,8 +658,8 @@ zaddr_t     zhtree_iter_right_up(zht_iter_t *iter)
 
 zaddr_t     zhtree_iter_next(zht_iter_t *iter)
 {
-    if (iter->curr) {
-        return 0;
+    if (!iter->curr) {
+        return (iter->curr = 0);
     }
     
     if ( iter->curr->child ) {
@@ -691,8 +691,8 @@ zaddr_t     zhtree_iter_back(zht_iter_t *iter)
 
 zaddr_t     zhtree_iter_prev(zht_iter_t *iter)
 {
-    if (iter->curr) {
-        return 0;
+    if (!iter->curr) {
+        return (iter->curr = 0);
     }
     
     if ( zqueue_get_count(iter->iterq) ) 
