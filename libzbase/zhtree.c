@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "zhtree.h"
 #include "sim_log.h"
@@ -116,6 +117,28 @@ zaddr_t zhtree_get_wnode(zhtree_t *h)
     return h->wnode;
 }
 
+
+zcount_t    zhtree_get_depth(zhtree_t *h)
+{
+    return zqueue_get_depth(h->nodeq);
+}
+
+zcount_t    zhtree_get_count(zhtree_t *h)
+{
+    return zqueue_get_count(h->nodeq);
+}
+
+zspace_t    zhtree_get_space(zhtree_t *h)
+{
+    return zqueue_get_space(h->nodeq);
+}
+
+/*
+zspace_t    zhtree_get_hash_count(zhtree_t *h)
+{
+    return zqueue_get_space(h->hash_tbl);
+}
+*/
 
 int zhtree_ret_flag(zhtree_t *h)
 {
@@ -384,70 +407,6 @@ zaddr_t zhtree_change_wnode(zhtree_t *h, const char *path, uint32_t path_len)
     }
 }
 
-zqueue_t *zhtree_create_route(zhtree_t *h, zht_node_t* node)
-{
-    if (!node || zhtree_is_node_in_use(h, node)) {
-        return 0;
-    }
-    
-    #define INIT_ROUTE_DEPTH 64
-    
-    zqueue_t * q = ZQUEUE_MALLOC_D(zht_node_t*, INIT_ROUTE_DEPTH);
-    if (!q) {
-        xerr("<zhtree> %s() failed:1!\n", __FUNCTION__);
-        return 0;
-    }
-
-    while (node) {
-        zaddr_t ret = zqueue_push_back(q, &node);
-        if (!ret) {
-            xerr("<zhtree> %s() failed:2!\n", __FUNCTION__);
-            zqueue_free(q);
-            return 0;
-        }
-        if (node != zhtree_get_root(h)) {
-            node = node->parent;
-        } else {
-            break;
-        }
-    }
-    
-    return q;
-}
-
-
-
-/**
- * @return The space (not counting the null end character) need for storing
- *         the entire nodeq.
- */
-int zhtree_snprint_route(zqueue_t *nodeq, char *str, int size)
-{
-    zcount_t last = zqueue_get_count(nodeq) - 1;
-    int left = size, need = 0;
-    for (; last>=0; --last)
-    {
-        zaddr_t base = zqueue_get_elem_base(nodeq, last - 1);
-        zht_node_t *node = *(zht_node_t**)base;
-        int keylen = strlen(node->key);
-        if (need < size) {
-            if (left > keylen) {
-                strcpy(str, node->key);
-                str  += keylen;
-                left -= keylen;
-            } else {
-                strncpy(str, node->key, left - 1);
-                str  += (left - 1);
-                left  = 1;           /* for null terminate */
-            }
-        }
-        need += keylen;
-    }
-    str[0] = 0;
-
-    return need;
-}
-
 zht_path_t zht_path_open(zhtree_t *h, zht_node_t *node)
 {
     zht_path_t iter = {h, node, 0 ,0};
@@ -538,7 +497,7 @@ void zht_path_print(zht_path_t *iter)
     {
         xprint("%s", node->key);
         if (node!=iter->last) {
-            xprint(".");
+            xprint("/");
         }
     }
 }
@@ -629,6 +588,11 @@ void        zhtree_iter_close(zht_iter_t *iter)
         zqueue_free(iter->iterq);
     }
     iter->iterq = 0;
+}
+
+zht_node_t* zhtree_iter_curr(zht_iter_t *iter)
+{
+    return iter->curr;
 }
 
 zaddr_t     zhtree_iter_root(zht_iter_t *iter)

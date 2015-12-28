@@ -70,6 +70,10 @@ int         zhtree_ret_flag(zhtree_t *h);
 zaddr_t     zhtree_get_root(zhtree_t *h);
 zaddr_t     zhtree_get_wnode(zhtree_t *h);
 
+zcount_t    zhtree_get_depth(zhtree_t *h);
+zcount_t    zhtree_get_count(zhtree_t *h);
+zspace_t    zhtree_get_space(zhtree_t *h);
+
 /**
  *  @param key_len  - If 0, @key_len is ignored, @key is null end str. 
  *                  - Else, @key_len is forced to be the length for @key 
@@ -159,10 +163,23 @@ typedef struct zhtree_iterator {
 zht_iter_t  zhtree_iter_open(zhtree_t *h);
 int         zhtree_iter_assert(zht_iter_t *iter);
 void        zhtree_iter_close(zht_iter_t *iter);
+zht_node_t* zhtree_iter_curr(zht_iter_t *iter);
 
 zaddr_t     zhtree_iter_root(zht_iter_t *iter);
 zaddr_t     zhtree_iter_next(zht_iter_t *iter);
 zaddr_t     zhtree_iter_back(zht_iter_t *iter);
 zaddr_t     zhtree_iter_prev(zht_iter_t *iter);
+
+#define FOR_ZHT_NODE_IN(iter) \
+    for (zhtree_iter_root(iter); zhtree_iter_curr(iter); zhtree_iter_next(iter))
+
+#define WHILE_GET_ZHT_NODE(iter, node) \
+    for (node = zhtree_iter_root(iter); node; node = zhtree_iter_next(iter))
+
+#define FOR_ZHT_NODE_REVERSE_IN(iter) \
+    for (zhtree_iter_back(iter); zhtree_iter_curr(iter); zhtree_iter_prev(iter))
+
+#define WHILE_GET_ZHT_NODE_REVERSE(iter, node) \
+    for (node = zhtree_iter_back(iter); node; node = zhtree_iter_prev(iter))
 
 #endif // ZHTREE_H_
