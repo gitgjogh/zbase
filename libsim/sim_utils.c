@@ -280,7 +280,15 @@ char *str_iter_next_field(str_iter_t *iter,
     if (!iter->substr || !iter->sublen) {
         return 0;
     }
-    iter->substr = get_1st_field(iter->substr + iter->sublen + 1, iter->len, 
+    /** whether reach null end or exceed strlen  */
+    if ((iter->substr[iter->sublen] == 0) ||
+        (iter->len > 0 && (iter->substr + iter->sublen >= iter->str + iter->len))) {
+        iter->substr = 0;
+        iter->sublen = 0;
+        return 0;
+    }
+    iter->substr += (iter->sublen + 1);         /* jump last delemiters */
+    iter->substr  = get_1st_field(iter->substr, iter->len, 
                                 prejumpset, delemiters, &iter->sublen);
     return iter->substr;
 }
