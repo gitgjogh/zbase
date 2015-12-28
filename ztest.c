@@ -15,12 +15,14 @@
 *****************************************************************************/
 
 #include <stdio.h>
+#include <assert.h>
 
 #include "zlist.h"
 //#include "zopt.h"
 #include "zqueue.h"
 #include "zstrq.h"
 #include "zhash.h"
+#include "zhtree.h"
 
 #include "sim_opt.h"
 
@@ -297,6 +299,54 @@ int zopt_test(int argc, char **argv)
 }
 */
 
+static
+void zht_printf(zqidx_t idx, zht_node_t *node)
+{
+    printf("%d:%s", idx, node->key);
+}
+
+int zhtree_test(int argc, char **argv)
+{
+    zhtree_t *h = zhtree_malloc(sizeof(zht_node_t), 8);
+    zht_node_t *video = zhtree_touch_node(h, "/video", 0);          assert(video);
+    zht_node_t *size = zhtree_touch_child(h, video, "size", 0);     assert(size);
+    zhtree_touch_child(h, size, "w", 0);
+    zhtree_touch_child(h, size, "h", 0);
+    
+    zhtree_touch_node(h, "/video/./../audio/fmt/name", 0);
+    zhtree_touch_node(h, "/audio/fmt/name", 0);
+    zhtree_touch_node(h, "/audio/fmt/ar", 0);
+    zhtree_change_wnode(h, "/audio/fmt", 0);
+    zhtree_touch_node(h, "ac", 0);
+    zhtree_touch_node(h, "name", 0);
+
+    zqueue_print(h->nodeq, "zhtree->nodeq", zht_printf, ", ", "\n");
+    //zhtree_free(h);
+    //return 0;
+
+    zht_node_t *node = 0;
+    zht_iter_t iter = zhtree_iter_open(h);
+    if (zhtree_iter_assert(&iter)) {
+        WHILE_GET_ZHT_NODE(&iter, node)
+        {
+            zht_print_full_path(h, node);
+            xprint("\n");
+        }
+        xprint("\n");
+
+        WHILE_GET_ZHT_NODE_REVERSE(&iter, node)
+        {
+            zht_print_full_path(h, node);
+            xprint("\n");
+        }
+    }
+    zhtree_iter_close(&iter);
+    
+    zhtree_free(h);
+
+    return 0;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -315,6 +365,7 @@ int main(int argc, char **argv)
         {"queue",   zqueue_test,    ""},
         {"strq",    zstrq_test,     ""},
         {"hash",    zhash_test,     ""},
+        {"zhtree",  zhtree_test,    ""},
     };
 
     xlog_init(SLOG_DBG-1);
