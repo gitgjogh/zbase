@@ -30,6 +30,50 @@ static void     zqueue_quick_sort_iter(zqueue_t *q, zq_cmp_func_t func,
 
 
 
+static zbidx_t  zq_op_qidx_2_bidx(zqueue_t *q, zqidx_t qidx);
+static zqidx_t  zq_op_bidx_2_qidx(zqueue_t *q, zbidx_t bidx);
+static zaddr_t  zq_op_qidx_2_base(zqueue_t *q, zbidx_t qidx);
+static zqidx_t  zqueue_addr_2_bidx_in_buf(zqueue_t *q, zaddr_t elem_base, int is_base);
+
+/* you must assert zqueue_is_bidx_in_buf(q, bidx) */
+static zqidx_t zq_op_bidx_2_qidx(zqueue_t *q, zbidx_t bidx)
+{
+    zqidx_t qidx = bidx - q->start;
+    qidx += (qidx < 0 ? q->depth : 0);
+    return qidx;
+}
+
+/* you must assert zqueue_is_qidx_in_buf(q, qidx) */
+static zbidx_t zq_op_qidx_2_bidx(zqueue_t *q, zqidx_t qidx)
+{
+    zbidx_t bidx = qidx + q->start;
+    bidx -= (bidx >= q->depth ? q->depth : 0);
+    return bidx;
+}
+
+/* you must assert zqueue_is_qidx_in_buf(q, qidx) */
+static zaddr_t zq_op_qidx_2_base(zqueue_t *q, zbidx_t qidx)
+{
+    zbidx_t bidx = zq_op_qidx_2_bidx(q, bidx);
+    return ZQUEUE_ELEM_BASE(q, bidx);
+}
+
+#define     ZQUEUE_NEAREST_BIDX(q, addr) \
+        ((((char *)(addr))-((char *)(q->elem_array))) / (q->elem_size))
+
+static
+zqidx_t zqueue_addr_2_bidx_in_buf(zqueue_t *q, zaddr_t elem_base, int is_base)
+{
+    if (zqueue_is_addr_in_buf(q, elem_base)) {
+        zbidx_t bidx  = ZQUEUE_NEAREST_BIDX(q, elem_base);
+        if ((!is_base) || (ZQUEUE_ELEM_BASE(q, bidx) == elem_base)) {
+            return bidx;
+        }
+    }
+    return -1;
+}
+
+
 /* buffer attach would reset the entire context */
 zcount_t zqueue_buf_attach(zqueue_t *q, zaddr_t buf, uint32_t elem_size, uint32_t depth)
 {
@@ -182,52 +226,28 @@ zspace_t zqueue_get_space(zqueue_t *q)
 
 zaddr_t zqueue_qidx_2_base_in_use(zqueue_t *q, zqidx_t qidx)
 {
-    return zqueue_is_qdix_in_use(q, qidx) ? ZQUEUE_ELEM_BASE(q, qidx) : 0;
+    if (zqueue_is_qidx_in_use(q, qidx)) {
+        return zq_op_qidx_2_base(q, qidx);
+    } 
+    return 0;
 }
 
 zaddr_t zqueue_qidx_2_base_in_buf(zqueue_t *q, zqidx_t qidx)
 {
-    return zqueue_is_qdix_in_buf(q, qidx) ? ZQUEUE_ELEM_BASE(q, qidx) : 0;
+    if (zqueue_is_qidx_in_buf(q, qidx)) {
+        return zq_op_qidx_2_base(q, qidx);
+    } 
+    return 0;
 }
 
-int zqueue_is_qdix_in_buf(zqueue_t *q, zqidx_t qidx)
+int zqueue_is_qidx_in_buf(zqueue_t *q, zqidx_t qidx)
 {
     return (0<=qidx && qidx < q->depth);
 }
 
-int zqueue_is_qdix_in_use(zqueue_t *q, zqidx_t qidx)
+int zqueue_is_qidx_in_use(zqueue_t *q, zqidx_t qidx)
 {
     return (0<=qidx && qidx < q->count);
-}
-
-#define     ZQUEUE_NEAREST_BIDX(q, addr) \
-        ((((char *)(addr))-((char *)(q->elem_array))) / (q->elem_size))
-
-zqidx_t zqueue_base_2_qidx_in_buf(zqueue_t *q, zaddr_t elem_base)
-{
-    if (zqueue_is_addr_in_buf(q, elem_base)) {
-        zbidx_t bidx  = ZQUEUE_NEAREST_BIDX(q, elem_base);
-        if (ZQUEUE_ELEM_BASE(q, bidx) == elem_base) {
-            return bidx;
-        }
-    }
-    return -1;
-}
-
-zqidx_t zqueue_base_2_qidx_in_use(zqueue_t *q, zaddr_t elem_base)
-{
-    zbidx_t qidx = zqueue_base_2_qidx_in_buf(q, elem_base);
-    return zqueue_is_qdix_in_use(q, qidx) ? qidx : -1;
-}
-
-zqidx_t zqueue_addr_2_qidx_in_buf(zqueue_t *q, zaddr_t addr)
-{
-    return zqueue_is_addr_in_buf(q, addr) ? ZQUEUE_NEAREST_BIDX(q, addr) : -1;
-}
-
-zqidx_t zqueue_addr_2_qidx_in_use(zqueue_t *q, zaddr_t addr)
-{
-    return zqueue_is_addr_in_use(q, addr) ? ZQUEUE_NEAREST_BIDX(q, addr) : -1;
 }
 
 int zqueue_is_addr_in_buf(zqueue_t *q, zaddr_t addr)
@@ -235,9 +255,34 @@ int zqueue_is_addr_in_buf(zqueue_t *q, zaddr_t addr)
     return (q->elem_array <= addr && addr < ZQUEUE_ELEM_BASE(q, q->depth));
 }
 
+zqidx_t zqueue_base_2_qidx_in_buf(zqueue_t *q, zaddr_t elem_base)
+{
+    zbidx_t bidx = zqueue_addr_2_bidx_in_buf(q, elem_base, 1);
+    return bidx>=0 ? zq_op_bidx_2_qidx(q, bidx) : -1;
+}
+
+zqidx_t zqueue_base_2_qidx_in_use(zqueue_t *q, zaddr_t elem_base)
+{
+    zbidx_t qidx = zqueue_base_2_qidx_in_buf(q, elem_base);
+    return zqueue_is_qidx_in_use(q, qidx) ? qidx : -1;
+}
+
+zqidx_t zqueue_addr_2_qidx_in_buf(zqueue_t *q, zaddr_t addr)
+{
+    zbidx_t bidx = zqueue_addr_2_bidx_in_buf(q, addr, 0);
+    return bidx>=0 ? zq_op_bidx_2_qidx(q, bidx) : -1;
+}
+
+zqidx_t zqueue_addr_2_qidx_in_use(zqueue_t *q, zaddr_t addr)
+{
+    zbidx_t qidx = zqueue_addr_2_qidx_in_buf(q, addr);
+    return zqueue_is_qidx_in_use(q, qidx) ? qidx : -1;
+}
+
 int zqueue_is_addr_in_use(zqueue_t *q, zaddr_t addr)
 {
-    return (q->elem_array <= addr && addr < ZQUEUE_ELEM_BASE(q, q->count));
+    zbidx_t qidx = zqueue_base_2_qidx_in_buf(q, addr);
+    return zqueue_is_qidx_in_use(q, qidx);
 }
 
 int zqueue_is_elem_base_in_buf(zqueue_t *q, zaddr_t elem_base)

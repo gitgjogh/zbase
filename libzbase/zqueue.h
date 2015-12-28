@@ -22,6 +22,7 @@
 typedef struct z_queue
 {
     zspace_t  depth;
+    zcount_t  start;
     zcount_t  count;
     uint32_t  elem_size;
     zaddr_t   elem_array;
@@ -69,8 +70,8 @@ zspace_t    zqueue_get_space(zqueue_t *q);
         ((zaddr_t)(((char *)q->elem_array) + (bidx) * q->elem_size))
 zaddr_t     zqueue_qidx_2_base_in_buf(zqueue_t *q, zqidx_t qidx);
 zaddr_t     zqueue_qidx_2_base_in_use(zqueue_t *q, zqidx_t qidx);
-int         zqueue_is_qdix_in_buf(zqueue_t *q, zqidx_t qidx);
-int         zqueue_is_qdix_in_use(zqueue_t *q, zqidx_t qidx);
+int         zqueue_is_qidx_in_buf(zqueue_t *q, zqidx_t qidx);
+int         zqueue_is_qidx_in_use(zqueue_t *q, zqidx_t qidx);
 
 /**
  * @param elem_base must be elem_size alignment
