@@ -450,7 +450,7 @@ int zhtree_snprint_route(zqueue_t *nodeq, char *str, int size)
 
 zht_path_t zht_path_open(zhtree_t *h, zht_node_t *node)
 {
-    zht_path_t iter = {h, 0, 0 ,0};
+    zht_path_t iter = {h, node, 0 ,0};
     if (!h || !node || !zhtree_is_node_in_use(h, node)) {
         return iter;
     }
@@ -475,9 +475,6 @@ zht_path_t zht_path_open(zhtree_t *h, zht_node_t *node)
             break;
         }
     }
-
-    iter.h = h;
-    iter.last = node;
 
     return iter;
 }
