@@ -46,7 +46,7 @@ typedef struct zhtree
     zht_head_t  *hash_tbl;
 
     uint32_t     node_size;         //<! elem_size
-    zqueue_t    *nodeq;             //<! vector<zht_node_t> nodeq; #elem_buf
+    zarray_t    *nodeq;             //<! vector<zht_node_t> nodeq; #elem_buf
     zstrq_t     *strq;              //<! key_buf
     
     uint32_t     ret_flag;
@@ -122,7 +122,7 @@ zaddr_t     zht_child_iter_curr(zht_child_iter_t *iter);
 typedef struct zhtree_path_iterator {
     zhtree_t    *h;
     zht_node_t  *last;
-    zqueue_t    *nodeq;             /** zqueue_t<zht_node_t*> [last ... root] */
+    zarray_t    *nodeq;             /** zarray_t<zht_node_t*> [last ... root] */
     zqidx_t      iter_idx;
 }zht_path_t;
 
@@ -156,7 +156,7 @@ int         zht_snprint_full_path(zhtree_t *h, zht_node_t *node, char *str, int 
 /** iterators */
 typedef struct zhtree_iterator {
     zhtree_t    *h;
-    zqueue_t    *iterq;         /** zqueue_t<zht_child_iter_t*> [root...] */
+    zarray_t    *iterq;         /** zarray_t<zht_child_iter_t*> [root...] */
     zht_node_t  *curr;
 }zht_iter_t;
 

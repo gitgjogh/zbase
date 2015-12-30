@@ -78,7 +78,7 @@ zopt_t* zopt_malloc(uint32_t depth_log2)
     }
     
     ps->h = ZHASH_MALLOC(zopt_node_t, depth_log2);
-    ps->access_stack = ZQUEUE_MALLOC_D(zopt_node_t*, 32);
+    ps->access_stack = ZARRAY_MALLOC_D(zopt_node_t*, 32);
 
     if (!ps->h || !ps->access_stack) {
         xerr("<zopt> %s() 1 failed!\n", __FUNCTION__);
@@ -261,13 +261,13 @@ zaddr_t zopt_add_root(zopt_t *opt, const char *key, const char *help)
     root->help = help;
     root->func = zopt_parse_node;
     root->p_val = 0;
-    zqueue_push_back(opt->access_stack, &root);
+    zarray_push_back(opt->access_stack, &root);
     return root;
 }
 
 zaddr_t zopt_get_root(zopt_t *opt)
 {
-    zopt_node_t **root = zqueue_get_front_base(opt->access_stack);
+    zopt_node_t **root = zarray_get_front_base(opt->access_stack);
     if (root) {
         return *root;
     }
@@ -276,7 +276,7 @@ zaddr_t zopt_get_root(zopt_t *opt)
 
 zaddr_t zopt_get_father(zopt_t *opt)
 {
-    zopt_node_t **father = zqueue_get_back_base(opt->access_stack);
+    zopt_node_t **father = zarray_get_back_base(opt->access_stack);
     if (father) {
         return *father;
     }
@@ -319,12 +319,12 @@ zaddr_t zopt_start_group(zopt_t *opt, const char *key, const char *help)
 
     node = zhash_touch_node(opt->h, father->sub_type, key, 0, 1, &b_found);
     if (!node) {
-        xerr("<zopt> hash node queue full\n");
+        xerr("<zopt> hash node array full\n");
         return 0;
     }
 
-    if ( !zqueue_push_back(opt->access_stack, &node) ) {
-        xerr("<zopt> hash node queue full\n");
+    if ( !zarray_push_back(opt->access_stack, &node) ) {
+        xerr("<zopt> hash node array full\n");
     }
 
     if (node) {
@@ -343,7 +343,7 @@ zaddr_t zopt_end_group(zopt_t *opt, const char   *key)
 {
     zopt_node_t **father = 0;
 
-    father = zqueue_get_back_base(opt->access_stack);
+    father = zarray_get_back_base(opt->access_stack);
     if (!father) {
         xerr("<zopt> access statck empty\n");
         return 0;
@@ -354,7 +354,7 @@ zaddr_t zopt_end_group(zopt_t *opt, const char   *key)
         return 0;
     }
 
-    father = zqueue_pop_back(opt->access_stack);
+    father = zarray_pop_back(opt->access_stack);
     return *father;
 }
 
@@ -362,7 +362,7 @@ int zopt_parse_node(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node)
 {
     char *arg;
     int   idx;
-    zopt_node_t **root = zqueue_get_front_base(opt->access_stack);
+    zopt_node_t **root = zarray_get_front_base(opt->access_stack);
     zopt_node_t *sub = 0;
 
     if (!node->sub_type) {
@@ -431,12 +431,12 @@ int zopt_parse_argcv(zopt_t *opt, int argc, char **argv)
     int ret =0;
     zarg_iter_t iter = zarg_iter(argc, argv);
 
-    zopt_node_t **root = zqueue_get_front_base(opt->access_stack);
+    zopt_node_t **root = zarray_get_front_base(opt->access_stack);
     if (!root) {
         xerr("<zopt> no root in the aceess stack\n");
         return 0;
     }
-    if (zqueue_get_count(opt->access_stack) != 1) {
+    if (zarray_get_count(opt->access_stack) != 1) {
         xwarn("<zopt> too many ancestors in the aceess stack\n");
     }
 

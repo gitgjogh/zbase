@@ -18,7 +18,7 @@
 #define ZHASH_H_
 
 #include "zdefs.h"
-#include "zqueue.h"
+#include "zarray.h"
 #include "zstrq.h"
 
 typedef     uint32_t        zh_hval_t;      /* type for hash value */
@@ -46,7 +46,7 @@ typedef struct zhash
     zh_head_t  *hash_tbl;
 
     uint32_t    node_size;      //<! elem_size
-    zqueue_t   *nodeq;          //<! elem_buf
+    zarray_t   *nodeq;          //<! elem_buf
     zstrq_t    *strq;           //<! key_buf
     
     uint32_t    ret_flag;

@@ -44,8 +44,8 @@ zhtree_t *zhtree_malloc(uint32_t node_size, uint32_t depth_log2)
     zh->depth = 1 << depth_log2;
 
     zh->hash_tbl = calloc(zh->depth, sizeof(zht_head_t));
-    zh->nodeq = zqueue_malloc_s(node_size, zh->depth);
-    zqueue_memzero(zh->nodeq);
+    zh->nodeq = zarray_malloc_s(node_size, zh->depth);
+    zarray_memzero(zh->nodeq);
     zh->strq  = zstrq_malloc(0);
 
     if (!zh->hash_tbl || !zh->nodeq || !zh->strq) {
@@ -55,7 +55,7 @@ zhtree_t *zhtree_malloc(uint32_t node_size, uint32_t depth_log2)
     }
 
     static char name[] = "root";
-    zht_node_t *root = zqueue_push_back(zh->nodeq, 0);
+    zht_node_t *root = zarray_push_back(zh->nodeq, 0);
     if ( root == 0 ) {
         xerr("<zhtree> no room for root!\n");
         zhtree_free(zh);
@@ -72,7 +72,7 @@ void zhtree_free(zhtree_t *h)
 {
     if (h) {
         if (h->hash_tbl) { free(h->hash_tbl); }
-        if (h->nodeq) { zqueue_free(h->nodeq); }
+        if (h->nodeq) { zarray_free(h->nodeq); }
         if (h->strq) { zstrq_free(h->strq); }
         free(h);
     }
@@ -120,23 +120,23 @@ zaddr_t zhtree_get_wnode(zhtree_t *h)
 
 zcount_t    zhtree_get_depth(zhtree_t *h)
 {
-    return zqueue_get_depth(h->nodeq);
+    return zarray_get_depth(h->nodeq);
 }
 
 zcount_t    zhtree_get_count(zhtree_t *h)
 {
-    return zqueue_get_count(h->nodeq);
+    return zarray_get_count(h->nodeq);
 }
 
 zspace_t    zhtree_get_space(zhtree_t *h)
 {
-    return zqueue_get_space(h->nodeq);
+    return zarray_get_space(h->nodeq);
 }
 
 /*
 zspace_t    zhtree_get_hash_count(zhtree_t *h)
 {
-    return zqueue_get_space(h->hash_tbl);
+    return zarray_get_space(h->hash_tbl);
 }
 */
 
@@ -147,12 +147,12 @@ int zhtree_ret_flag(zhtree_t *h)
 
 int zhtree_is_node_in_buf(zhtree_t *h, zaddr_t node_base)
 {
-    return zqueue_is_elem_base_in_buf(h->nodeq, node_base);
+    return zarray_is_elem_base_in_buf(h->nodeq, node_base);
 }
 
 int zhtree_is_node_in_use(zhtree_t *h, zaddr_t node_base)
 {
-    return zqueue_is_elem_base_in_use(h->nodeq, node_base);
+    return zarray_is_elem_base_in_use(h->nodeq, node_base);
 }
 
 zht_child_iter_t   zht_child_iter_init(zht_node_t *parent)
@@ -278,7 +278,7 @@ zaddr_t zhtree_touch_child_internal(zhtree_t *h, zht_node_t *parent,
             return 0;
         }
 
-        node = zqueue_push_back(h->nodeq, 0);
+        node = zarray_push_back(h->nodeq, 0);
         if ( node == 0 ) {
             xerr("<zhtree> hash table overflow!\n");
             h->ret_flag |= ZHASH_NODE_BUF_OVERFLOW;
@@ -415,17 +415,17 @@ zht_path_t zht_path_open(zhtree_t *h, zht_node_t *node)
     }
 
     #define INIT_ROUTE_DEPTH 64
-    iter.nodeq = ZQUEUE_MALLOC_D(zht_node_t*, INIT_ROUTE_DEPTH);
+    iter.nodeq = ZARRAY_MALLOC_D(zht_node_t*, INIT_ROUTE_DEPTH);
     if (!iter.nodeq) {
         xerr("<zhtree> %s() failed:1!\n", __FUNCTION__);
         return iter;
     }
 
     while (node) {
-        zaddr_t ret = zqueue_push_back(iter.nodeq, &node);
+        zaddr_t ret = zarray_push_back(iter.nodeq, &node);
         if (!ret) {
             xerr("<zhtree> %s() failed:2!\n", __FUNCTION__);
-            zqueue_free(iter.nodeq);
+            zarray_free(iter.nodeq);
             return iter;
         }
         if (node != zhtree_get_root(h)) {
@@ -449,7 +449,7 @@ int zht_path_assert(zht_path_t *iter)
 void zht_path_close(zht_path_t *iter)
 {
     if (iter && iter->nodeq) {
-        zqueue_free(iter->nodeq);
+        zarray_free(iter->nodeq);
     }
     iter->nodeq = 0;
 }
@@ -457,7 +457,7 @@ void zht_path_close(zht_path_t *iter)
 zaddr_t zht_path_iter_root(zht_path_t *iter)
 {
     if (iter->nodeq) {
-        iter->iter_idx = zqueue_get_count(iter->nodeq);
+        iter->iter_idx = zarray_get_count(iter->nodeq);
     }
     return zht_path_iter_next(iter);
 }
@@ -465,7 +465,7 @@ zaddr_t zht_path_iter_root(zht_path_t *iter)
 zaddr_t zht_path_iter_next(zht_path_t *iter)
 {
     if (iter->nodeq) {
-        zaddr_t base = zqueue_get_elem_base(iter->nodeq, --iter->iter_idx);
+        zaddr_t base = zarray_get_elem_base(iter->nodeq, --iter->iter_idx);
         return base ? *(zht_node_t**)base : 0;
     }
     return 0;
@@ -480,7 +480,7 @@ zaddr_t zht_path_iter_last(zht_path_t *iter)
 zaddr_t zht_path_iter_prev(zht_path_t *iter)
 {
     if (iter->nodeq) {
-        zaddr_t base = zqueue_get_elem_base(iter->nodeq, ++iter->iter_idx);
+        zaddr_t base = zarray_get_elem_base(iter->nodeq, ++iter->iter_idx);
         return base ? *(zht_node_t**)base : 0;
     }
     return 0;
@@ -563,7 +563,7 @@ zht_iter_t  zhtree_iter_open(zhtree_t *h)
     }
 
     #define INIT_ROUTE_DEPTH 64
-    iter.iterq = ZQUEUE_MALLOC_D(zht_child_iter_t, INIT_ROUTE_DEPTH);
+    iter.iterq = ZARRAY_MALLOC_D(zht_child_iter_t, INIT_ROUTE_DEPTH);
     if (!iter.iterq) {
         xerr("<zhtree> %s() failed:1!\n", __FUNCTION__);
         return iter;
@@ -585,7 +585,7 @@ int         zhtree_iter_assert(zht_iter_t *iter)
 void        zhtree_iter_close(zht_iter_t *iter)
 {
     if (iter && iter->iterq) {
-        zqueue_free(iter->iterq);
+        zarray_free(iter->iterq);
     }
     iter->iterq = 0;
 }
@@ -597,7 +597,7 @@ zht_node_t* zhtree_iter_curr(zht_iter_t *iter)
 
 zaddr_t     zhtree_iter_root(zht_iter_t *iter)
 {
-    zqueue_clear(iter->iterq);
+    zarray_clear(iter->iterq);
     iter->curr = iter->h->root;
     return iter->curr;
 }
@@ -605,14 +605,14 @@ zaddr_t     zhtree_iter_root(zht_iter_t *iter)
 static
 zaddr_t     zhtree_iter_right_up(zht_iter_t *iter)
 {
-    if ( zqueue_get_count(iter->iterq) ) 
+    if ( zarray_get_count(iter->iterq) ) 
     {
-        zht_child_iter_t *parent_context = zqueue_get_back_base(iter->iterq);
+        zht_child_iter_t *parent_context = zarray_get_back_base(iter->iterq);
         iter->curr = zht_child_iter_next(parent_context);   // next sibling
         if (iter->curr) {
             return iter->curr;
         } else {
-            zqueue_pop_back(iter->iterq);
+            zarray_pop_back(iter->iterq);
             return zhtree_iter_right_up(iter);
         }
     }
@@ -628,10 +628,10 @@ zaddr_t     zhtree_iter_next(zht_iter_t *iter)
     
     if ( iter->curr->child ) {
         zht_child_iter_t child_iter = zht_child_iter_init(iter->curr);
-        zht_child_iter_t *p_child_iter = zqueue_push_back(iter->iterq, &child_iter);
+        zht_child_iter_t *p_child_iter = zarray_push_back(iter->iterq, &child_iter);
         iter->curr = zht_child_iter_1st(p_child_iter);
         return iter->curr;
-    } else if ( zqueue_get_count(iter->iterq) ) {
+    } else if ( zarray_get_count(iter->iterq) ) {
         return zhtree_iter_right_up(iter);
     }
 
@@ -640,13 +640,13 @@ zaddr_t     zhtree_iter_next(zht_iter_t *iter)
 
 zaddr_t     zhtree_iter_back(zht_iter_t *iter)
 {
-    zqueue_clear(iter->iterq);
+    zarray_clear(iter->iterq);
     iter->curr = iter->h->root;
     
     while (iter->curr && iter->curr->child)
     {
         zht_child_iter_t child_iter = zht_child_iter_init(iter->curr);
-        zht_child_iter_t *p_child_iter = zqueue_push_back(iter->iterq, &child_iter);
+        zht_child_iter_t *p_child_iter = zarray_push_back(iter->iterq, &child_iter);
         iter->curr = zht_child_iter_last(p_child_iter);
     }
     
@@ -659,19 +659,19 @@ zaddr_t     zhtree_iter_prev(zht_iter_t *iter)
         return (iter->curr = 0);
     }
     
-    if ( zqueue_get_count(iter->iterq) ) 
+    if ( zarray_get_count(iter->iterq) ) 
     {
-        zht_child_iter_t *parent_context = zqueue_get_back_base(iter->iterq);
+        zht_child_iter_t *parent_context = zarray_get_back_base(iter->iterq);
         iter->curr = zht_child_iter_prev(parent_context);   // prev sibling
         if (!iter->curr) {
-            zqueue_pop_back(iter->iterq);
+            zarray_pop_back(iter->iterq);
             iter->curr = parent_context->parent;
             return iter->curr;
         } else {
             //goto last of the curr subtree
             while (iter->curr->child) {
                 zht_child_iter_t child_iter = zht_child_iter_init(iter->curr);
-                zht_child_iter_t *p_child_iter = zqueue_push_back(iter->iterq, &child_iter);
+                zht_child_iter_t *p_child_iter = zarray_push_back(iter->iterq, &child_iter);
                 iter->curr = zht_child_iter_last(p_child_iter);
             }
             return iter->curr;

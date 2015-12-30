@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2014 Jeff <ggjogh@gmail.com>
+ * Copyright 2015 Jeff <ggjogh@gmail.com>
  *****************************************************************************
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
 *****************************************************************************/
 
-#ifndef ZQUEUE_H_
-#define ZQUEUE_H_
+#ifndef ZARRAY_H_
+#define ZARRAY_H_
 
 #include "zdefs.h"
 
-typedef struct z_queue
+typedef struct z_array
 {
     zspace_t  depth;
     zcount_t  count;
@@ -30,140 +30,140 @@ typedef struct z_queue
 
 //private:
     zaddr_t   elem_swap;
-}zqueue_t;
+}zarray_t;
 
-zcount_t    zqueue_buf_attach(zqueue_t *q, zaddr_t buf, uint32_t elem_size, uint32_t depth);
-void        zqueue_buf_detach(zqueue_t *q);
+zcount_t    zarray_buf_attach(zarray_t *za, zaddr_t buf, uint32_t elem_size, uint32_t depth);
+void        zarray_buf_detach(zarray_t *za);
 
-zaddr_t     zqueue_buf_malloc(zqueue_t *q, uint32_t elem_size, uint32_t depth, int b_allow_realloc);
-zaddr_t     zqueue_buf_realloc(zqueue_t *q, uint32_t depth, int b_allow_realloc);
-void        zqueue_buf_free(zqueue_t *q);
+zaddr_t     zarray_buf_malloc(zarray_t *za, uint32_t elem_size, uint32_t depth, int b_allow_realloc);
+zaddr_t     zarray_buf_realloc(zarray_t *za, uint32_t depth, int b_allow_realloc);
+void        zarray_buf_free(zarray_t *za);
 
 /**
- * Enlarge queue buffer.
+ * Enlarge array buffer.
  * In case of reallocation failure, the old buf is kept unchanged.
  * 
  * @param additional_count  the count of elem to be allocated
- *                          in addition to zqueue_get_count()
- * @return zqueue_get_space() after buf grow. 
+ *                          in addition to zarray_get_count()
+ * @return zarray_get_space() after buf grow. 
  */
-zspace_t    zqueue_buf_grow(zqueue_t *q, uint32_t additional_count);
+zspace_t    zarray_buf_grow(zarray_t *za, uint32_t additional_count);
 
 
-zqueue_t*   zqueue_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc);
-zqueue_t*   zqueue_malloc_s(uint32_t elem_size, uint32_t depth);
-zqueue_t*   zqueue_malloc_d(uint32_t elem_size, uint32_t depth);
-#define     ZQUEUE_MALLOC_S(type_t, depth)    zqueue_malloc_s(sizeof(type_t), (depth))
-#define     ZQUEUE_MALLOC_D(type_t, depth)    zqueue_malloc_d(sizeof(type_t), (depth))
-void        zqueue_free(zqueue_t *q);
+zarray_t*   zarray_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc);
+zarray_t*   zarray_malloc_s(uint32_t elem_size, uint32_t depth);
+zarray_t*   zarray_malloc_d(uint32_t elem_size, uint32_t depth);
+#define     ZARRAY_MALLOC_S(type_t, depth)    zarray_malloc_s(sizeof(type_t), (depth))
+#define     ZARRAY_MALLOC_D(type_t, depth)    zarray_malloc_d(sizeof(type_t), (depth))
+void        zarray_free(zarray_t *za);
 
-void        zqueue_memzero(zqueue_t *q);
-void        zqueue_clear(zqueue_t *q);
+void        zarray_memzero(zarray_t *za);
+void        zarray_clear(zarray_t *za);
 
-zcount_t    zqueue_get_depth(zqueue_t *q);
-zcount_t    zqueue_get_count(zqueue_t *q);
-zspace_t    zqueue_get_space(zqueue_t *q);
+zcount_t    zarray_get_depth(zarray_t *za);
+zcount_t    zarray_get_count(zarray_t *za);
+zspace_t    zarray_get_space(zarray_t *za);
 
 
-#define     ZQUEUE_ELEM_BASE(q, bidx) \
-        ((zaddr_t)(((char *)q->elem_array) + (bidx) * q->elem_size))
-zaddr_t     zqueue_qidx_2_base_in_buf(zqueue_t *q, zqidx_t qidx);
-zaddr_t     zqueue_qidx_2_base_in_use(zqueue_t *q, zqidx_t qidx);
-int         zqueue_is_qdix_in_buf(zqueue_t *q, zqidx_t qidx);
-int         zqueue_is_qdix_in_use(zqueue_t *q, zqidx_t qidx);
+#define     ZARRAY_ELEM_BASE(za, bidx) \
+        ((zaddr_t)(((char *)za->elem_array) + (bidx) * za->elem_size))
+zaddr_t     zarray_qidx_2_base_in_buf(zarray_t *za, zqidx_t qidx);
+zaddr_t     zarray_qidx_2_base_in_use(zarray_t *za, zqidx_t qidx);
+int         zarray_is_qdix_in_buf(zarray_t *za, zqidx_t qidx);
+int         zarray_is_qdix_in_use(zarray_t *za, zqidx_t qidx);
 
 /**
  * @param elem_base must be elem_size alignment
  */
-zqidx_t     zqueue_base_2_qidx_in_buf(zqueue_t *q, zaddr_t elem_base);
-zqidx_t     zqueue_base_2_qidx_in_use(zqueue_t *q, zaddr_t elem_base);
-int         zqueue_is_elem_base_in_buf(zqueue_t *q, zaddr_t elem_base);
-int         zqueue_is_elem_base_in_use(zqueue_t *q, zaddr_t elem_base);
+zqidx_t     zarray_base_2_qidx_in_buf(zarray_t *za, zaddr_t elem_base);
+zqidx_t     zarray_base_2_qidx_in_use(zarray_t *za, zaddr_t elem_base);
+int         zarray_is_elem_base_in_buf(zarray_t *za, zaddr_t elem_base);
+int         zarray_is_elem_base_in_use(zarray_t *za, zaddr_t elem_base);
 
 /**
  * @param addr no need to be elem_size alignment
  */
-zqidx_t     zqueue_addr_2_qidx_in_buf(zqueue_t *q, zaddr_t addr);
-zqidx_t     zqueue_addr_2_qidx_in_use(zqueue_t *q, zaddr_t addr);
-int         zqueue_is_addr_in_buf(zqueue_t *q, zaddr_t addr);
-int         zqueue_is_addr_in_use(zqueue_t *q, zaddr_t addr);
+zqidx_t     zarray_addr_2_qidx_in_buf(zarray_t *za, zaddr_t addr);
+zqidx_t     zarray_addr_2_qidx_in_use(zarray_t *za, zaddr_t addr);
+int         zarray_is_addr_in_buf(zarray_t *za, zaddr_t addr);
+int         zarray_is_addr_in_use(zarray_t *za, zaddr_t addr);
 
 
-#define     zqueue_get_elem_base        zqueue_qidx_2_base_in_use
-zaddr_t     zqueue_get_front_base(zqueue_t *q);        //<! @ret q[0]
-zaddr_t     zqueue_get_back_base(zqueue_t *q);         //<! @ret q[count-1]
-zaddr_t     zqueue_get_last_base(zqueue_t *q);         //<! @ret q[count]
+#define     zarray_get_elem_base        zarray_qidx_2_base_in_use
+zaddr_t     zarray_get_front_base(zarray_t *za);        //<! @ret za[0]
+zaddr_t     zarray_get_back_base(zarray_t *za);         //<! @ret za[count-1]
+zaddr_t     zarray_get_last_base(zarray_t *za);         //<! @ret za[count]
 
 
-zaddr_t     zqueue_set_elem_val(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base);
-zaddr_t     zqueue_set_elem_val_itnl(zqueue_t *q, zqidx_t dst_idx, zqidx_t src_idx);
+zaddr_t     zarray_set_elem_val(zarray_t *za, zqidx_t qidx, zaddr_t elem_base);
+zaddr_t     zarray_set_elem_val_itnl(zarray_t *za, zqidx_t dst_idx, zqidx_t src_idx);
 
 
-zaddr_t     zqueue_pop_elem(zqueue_t *q, zqidx_t qidx);
-zaddr_t     zqueue_pop_front(zqueue_t *q);
-zaddr_t     zqueue_pop_back(zqueue_t *q);
+zaddr_t     zarray_pop_elem(zarray_t *za, zqidx_t qidx);
+zaddr_t     zarray_pop_front(zarray_t *za);
+zaddr_t     zarray_pop_back(zarray_t *za);
 
 //! insert at count is same to push back
-zaddr_t     zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base);
-zaddr_t     zqueue_push_front(zqueue_t *q, zaddr_t elem_base);
-zaddr_t     zqueue_push_back(zqueue_t *q, zaddr_t elem_base);
+zaddr_t     zarray_insert_elem(zarray_t *za, zqidx_t qidx, zaddr_t elem_base);
+zaddr_t     zarray_push_front(zarray_t *za, zaddr_t elem_base);
+zaddr_t     zarray_push_back(zarray_t *za, zaddr_t elem_base);
 
 
 /** @return @delete_count or 0 */
-zcount_t    zqueue_delete_multi_elems(
-                    zqueue_t *dst, zqidx_t delete_from, 
+zcount_t    zarray_delete_multi_elems(
+                    zarray_t *dst, zqidx_t delete_from, 
                     zcount_t delete_count);
 
 /** @return @insert_count or 0 */
-zcount_t    zqueue_insert_null_elems(
-                    zqueue_t *dst, zqidx_t insert_before, 
+zcount_t    zarray_insert_null_elems(
+                    zarray_t *dst, zqidx_t insert_before, 
                     zcount_t insert_count);
 
-zcount_t    zqueue_insert_some_of_others(
-                    zqueue_t *dst, zqidx_t insert_before, 
-                    zqueue_t *src, zqidx_t src_start, 
+zcount_t    zarray_insert_some_of_others(
+                    zarray_t *dst, zqidx_t insert_before, 
+                    zarray_t *src, zqidx_t src_start, 
                     zcount_t insert_count);
-zcount_t    zqueue_insert_all_of_others (
-                    zqueue_t *dst, zqidx_t insert_before, 
-                    zqueue_t *src);
-zcount_t    zqueue_push_back_some_of_others(
-                    zqueue_t *dst, zqueue_t *src, 
+zcount_t    zarray_insert_all_of_others (
+                    zarray_t *dst, zqidx_t insert_before, 
+                    zarray_t *src);
+zcount_t    zarray_push_back_some_of_others(
+                    zarray_t *dst, zarray_t *src, 
                     zqidx_t src_start, 
                     zcount_t insert_count);
-zcount_t    zqueue_push_back_all_of_others(
-                    zqueue_t *dst, zqueue_t *src);
-#define     zqueue_cat(dst, src)  zqueue_push_back_all_of_others((dst), (src))
+zcount_t    zarray_push_back_all_of_others(
+                    zarray_t *dst, zarray_t *src);
+#define     zarray_cat(dst, src)  zarray_push_back_all_of_others((dst), (src))
 
 
-typedef int32_t (*zq_cmp_func_t)  (zaddr_t base1, zaddr_t base2);
-zaddr_t     zqueue_find_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func);
-zaddr_t     zqueue_pop_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func);
+typedef int32_t (*za_cmp_func_t)  (zaddr_t base1, zaddr_t base2);
+zaddr_t     zarray_find_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func);
+zaddr_t     zarray_pop_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func);
 
 
-int         zqueue_elem_cmp(zqueue_t *q, zq_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! q[qidx] - elem_base
-int         zqueue_elem_cmp_itnl(zqueue_t *q, zq_cmp_func_t func, zqidx_t qidx_1, zqidx_t qidx_2);    //<! q[qidx_1] - q[qidx_2]   
+int         zarray_elem_cmp(zarray_t *za, za_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! za[qidx] - elem_base
+int         zarray_elem_cmp_itnl(zarray_t *za, za_cmp_func_t func, zqidx_t qidx_1, zqidx_t qidx_2);    //<! za[qidx_1] - za[qidx_2]   
 
-void        zqueue_quick_sort(zqueue_t *q, zq_cmp_func_t func);
-void        zqueue_quick_sort_i32(zqueue_t *q);
-void        zqueue_quick_sort_u32(zqueue_t *q);
+void        zarray_quick_sort(zarray_t *za, za_cmp_func_t func);
+void        zarray_quick_sort_i32(zarray_t *za);
+void        zarray_quick_sort_u32(zarray_t *za);
 
 
-typedef void  (*zq_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
-void        zqueue_print(zqueue_t *q, const char *q_name, zq_print_func_t func,
+typedef void  (*za_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
+void        zarray_print(zarray_t *za, const char *q_name, za_print_func_t func,
                     const char *delimiters, const char *terminator);
 
 /** iterators */
-typedef struct zqueue_iterator {
-    zqueue_t    *q;
+typedef struct zarray_iterator {
+    zarray_t    *za;
     zqidx_t     iter_idx;
-}zq_iter_t;
+}za_iter_t;
 
-zq_iter_t   zqueue_iter(zqueue_t *q);
-zaddr_t     zqueue_front(zq_iter_t *iter);
-zaddr_t     zqueue_next(zq_iter_t *iter);
-zaddr_t     zqueue_back(zq_iter_t *iter);
-zaddr_t     zqueue_prev(zq_iter_t *iter);
+za_iter_t   zarray_iter(zarray_t *za);
+zaddr_t     zarray_front(za_iter_t *iter);
+zaddr_t     zarray_next(za_iter_t *iter);
+zaddr_t     zarray_back(za_iter_t *iter);
+zaddr_t     zarray_prev(za_iter_t *iter);
 
 
 
-#endif //ZQUEUE_H_
+#endif //ZARRAY_H_
