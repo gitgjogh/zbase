@@ -29,11 +29,32 @@ static void     zqueue_quick_sort_iter(zqueue_t *q, zq_cmp_func_t func,
                                        zqidx_t start, zqidx_t end);
 
 
-
+static zbidx_t  zq_op_push_front_upd(zqueue_t *q);
+static zbidx_t  zq_op_pop_front_upd(zqueue_t *q);
 static zbidx_t  zq_op_qidx_2_bidx(zqueue_t *q, zqidx_t qidx);
 static zqidx_t  zq_op_bidx_2_qidx(zqueue_t *q, zbidx_t bidx);
 static zaddr_t  zq_op_qidx_2_base(zqueue_t *q, zbidx_t qidx);
 static zqidx_t  zqueue_addr_2_bidx_in_buf(zqueue_t *q, zaddr_t elem_base, int is_base);
+
+static zbidx_t zq_op_push_front_upd(zqueue_t *q)
+{
+    q->count += 1;
+    q->start -= 1;
+    if (q->start < 0) {
+        q->start = q->depth - 1;
+    }
+    return q->start;
+}
+
+static zbidx_t zq_op_pop_front_upd(zqueue_t *q)
+{
+    q->count -= 1;
+    q->start += 1;
+    if (q->start >= q->depth) {
+        q->start = 0;
+    }
+    return q->start;
+}
 
 /* you must assert zqueue_is_bidx_in_buf(q, bidx) */
 static zqidx_t zq_op_bidx_2_qidx(zqueue_t *q, zbidx_t bidx)
@@ -118,10 +139,22 @@ zaddr_t zqueue_buf_realloc(zqueue_t *q, uint32_t depth, int b_allow_realloc)
         
         zaddr_t buf = realloc(q->elem_array, q->elem_size * depth);
         if (buf) {
+            zqueue_t _old_q = *q;
+            zqueue_t *old_q = &_old_q;
+
             q->depth = depth;
             q->count = (q->count <= depth) ? q->count : depth;
             q->elem_array = buf;
             q->b_allow_realloc = b_allow_realloc;
+
+            /* move the wrapped area */
+            zqidx_t mv_idx = old_q->depth - old_q->start;
+            for ( ; mv_idx < old_q->count; ++ mv_idx) {
+                zaddr_t new_base = zqueue_get_elem(q, mv_idx);
+                zaddr_t old_base = zqueue_get_elem(old_q, mv_idx);
+                memcpy(new_base, old_base, sizeof(zqueue_t));
+            }
+                
             return buf;
         }
         xerr("%s() failed!\n", __FUNCTION__);
@@ -334,148 +367,149 @@ zaddr_t   zqueue_prev(zq_iter_t *iter)
     return zqueue_get_elem_base(iter->q, -- iter->iter_idx);
 }
 
-zaddr_t zqueue_pop_elem(zqueue_t *q, zqidx_t qidx)
+zcount_t zqueue_pop_front(zqueue_t *q, zaddr_t dst_base)
 {
-    zaddr_t base = zqueue_get_elem_base(q, qidx);
+    zaddr_t base = zqueue_qidx_2_base_in_use(q, 0);
     if (base) {
-        zmem_swap_near_block(base, q->elem_size, 1, q->count-qidx-1);
-        q->count -= 1;
+        zq_op_pop_front_upd(q);
+        if (dst_base) {
+            memcpy(dst_base, base, sizeof(q->elem_size);
+        }
+        return 1;
+    }
+    return 0;
+}
 
-        return zqueue_qidx_2_base_in_buf(q, q->count);
+zcount_t zqueue_pop_back(zqueue_t *q, zaddr_t dst_base)
+{
+    zaddr_t base = zqueue_qidx_2_base_in_use(q, q->count - 1);
+    if (base) {
+        q->count -= 1;
+        if (dst_base) {
+            memcpy(dst_base, base, sizeof(q->elem_size);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+zaddr_t zqueue_push_front(zqueue_t *q, zaddr_t elem_base)
+{
+    zspace_t space = zqueue_buf_grow(q, 1);
+    if (space > 0) {
+        zq_op_push_front_upd(q);
+        zaddr_t base = zqueue_get_front(q);
+        if (elem_base) {
+            memcpy(base, elem_base, sizeof(q->elem_size));
+        }
+        return base;
+    }
+    return 0;
+}
+
+zaddr_t zqueue_push_back(zqueue_t *q, zaddr_t elem_base)
+{
+    zspace_t space = zqueue_buf_grow(q, 1);
+    if (space > 0) {
+        q->count += 1;
+        zaddr_t base = zqueue_get_back(q);
+        if (elem_base) {
+            memcpy(base, elem_base, sizeof(q->elem_size));
+        }
+        return base;
+    }
+    return 0;
+}
+
+zcount_t zqueue_push_back_some_of_others(zqueue_t *dst, zqueue_t *src, 
+                                   zqidx_t src_start, zcount_t merge_count)
+{
+    zcount_t src_count = zqueue_get_count(src);
+    
+    if (0<=src_start && src_start < src_count) {
+        zspace_t dst_space = zqueue_buf_grow(dst, merge_count);
+        zqidx_t  src_end = src_start + merge_count;
+        if (dst_space>=merge_count) {
+            for ( ; src_start < src_end; ++src_start) {
+                zqueue_push_back(dst, zqueue_get_elem_base(src, src_start));
+            }
+        }
+    }
+}
+
+zcount_t zqueue_push_back_all_of_others(zqueue_t *dst, zqueue_t *src)
+{
+    return zqueue_push_back_some_of_others(dst, src, 0, zqueue_get_count(src));
+}
+
+zcount_t zqueue_pop_elem(zqueue_t *q, zqidx_t qidx, zaddr_t dst_base)
+{
+    zaddr_t src_base = zqueue_get_elem_base(q, qidx);
+    if (src_base) {
+        if (dst_base) {
+            memcpy(dst_base, src_base, sizeof(q->elem_size);
+        }
+        if (qidx > q->count / 2) {
+            for ( ; qidx < q->count - 1; ++ qidx) {
+                zaddr_t base0 = zqueue_get_elem_base(q, qidx);
+                zaddr_t base1 = zqueue_get_elem_base(q, qidx + 1);
+                memcpy(base0, base1, sizeof(q->elem_size);
+            }
+            -- q->count;
+        } else {
+            for ( ; qidx > 0; -- qidx) {
+                zaddr_t base0 = zqueue_get_elem_base(q, qidx);
+                zaddr_t base1 = zqueue_get_elem_base(q, qidx - 1);
+                memcpy(base0, base1, sizeof(q->elem_size);
+                zq_op_pop_front_upd(q);
+            }
+        }
+        
+        return 1;
     }
 
     return 0;
 }
 
-zaddr_t zqueue_pop_front(zqueue_t *q)
-{
-    return zqueue_pop_elem(q, 0);
-}
-
-zaddr_t zqueue_pop_back(zqueue_t *q)
-{
-    return zqueue_pop_elem(q, q->count - 1);
-}
-
-zaddr_t zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base)
+zaddr_t zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t src_base)
 {
     zspace_t space = zqueue_buf_grow(q, 1);
     zcount_t count = zqueue_get_count(q);
 
     if (0<=qidx && qidx<=count && space>=1)  
     {
-        zaddr_t  base  = zqueue_qidx_2_base_in_buf(q, qidx);
-        zmem_swap_near_block(base, q->elem_size, q->count-qidx, 1);
-        q->count += 1;
-
-        if (elem_base) {
-            memcpy(base, elem_base, q->elem_size);
-        }
-
-        return base;
-    }
-
-    return 0;
-}
-
-zaddr_t zqueue_push_front(zqueue_t *q, zaddr_t elem_base)
-{
-    return zqueue_insert_elem(q, 0, elem_base);
-}
-
-zaddr_t zqueue_push_back(zqueue_t *q, zaddr_t elem_base)
-{
-    return zqueue_insert_elem(q, q->count, elem_base);
-}
-
-zcount_t zqueue_insert_null_elems(
-                    zqueue_t *dst, zqidx_t insert_before, 
-                    zcount_t insert_count)
-{
-    zspace_t dst_space = zqueue_buf_grow(dst, insert_count);
-    zcount_t dst_count = zqueue_get_count(dst);
-    
-    if (0<=insert_before && insert_before<=dst_count && dst_space>=insert_count) 
-    {
-        zaddr_t  dst_base  = zqueue_qidx_2_base_in_buf(dst, insert_before);
-        zmem_swap_near_block(dst_base, dst->elem_size, 
-                             dst->count - insert_before, 
-                             insert_count);
-        dst->count += insert_count;
-        return insert_count;
-    }
-
-    return 0;
-}
-
-zcount_t  zqueue_delete_multi_elems(
-                    zqueue_t *dst, zqidx_t delete_from, 
-                    zcount_t delete_count)
-{
-    zspace_t dst_space = zqueue_get_space(dst);
-    zcount_t dst_count = zqueue_get_count(dst);
-    zaddr_t  dst_base  = zqueue_qidx_2_base_in_use(dst, delete_from);
-
-    if (dst_base && dst_count>=delete_count) 
-    {
-        zmem_swap_near_block(dst_base, dst->elem_size, 
-                             delete_count, 
-                             dst_count - delete_from - delete_count);
-        dst->count -= delete_count;
-        return delete_count;
-    }
-
-    return 0;
-}
-
-zcount_t zqueue_insert_some_of_others(
-                    zqueue_t *dst, zqidx_t insert_at,
-                    zqueue_t *src, zqidx_t src_start, 
-                    zcount_t insert_count)
-{
-    zcount_t real_insert = zqueue_insert_null_elems(dst, insert_at, insert_count);
-    
-    if (real_insert > 0) {
-        if (src) {
-            zqidx_t   qidx;
-            for (qidx = 0; qidx<insert_count; ++qidx) {
-                zaddr_t src_base = zqueue_get_elem_base(src, src_start+qidx);
-                zaddr_t dst_base = zqueue_get_elem_base(dst, insert_at+qidx);
-
-                if (dst_base && src_base) {
-                    memcpy(dst_base, src_base, dst->elem_size);
-                }
+        int i;
+        if (qidx > q->count / 2) {
+            ++ q->count;
+            for (i=q->count-1; i>qidx; --i) {
+                zaddr_t base0 = zqueue_get_elem_base(q, i);
+                zaddr_t base1 = zqueue_get_elem_base(q, i-1);
+                memcpy(base0, base1, sizeof(q->elem_size);
+            }
+            
+        } else {
+            zq_op_push_front_upd(q)
+            for (i=0; i<=qidx; ++i) {
+                zaddr_t base0 = zqueue_get_elem_base(q, i);
+                zaddr_t base1 = zqueue_get_elem_base(q, i + 1);
+                memcpy(base0, base1, sizeof(q->elem_size);
             }
         }
+        
+        zaddr_t dst_base  = zqueue_qidx_2_base_in_buf(q, qidx+1);
+        if (src_base) {
+            memcpy(dst_base, src_base, sizeof(q->elem_size);
+        }
+        return dst_base;
     }
 
-    return real_insert;
-}
-
-zcount_t  zqueue_insert_all_of_others(zqueue_t *dst, zqidx_t insert_at, zqueue_t *src)
-{
-    return zqueue_insert_some_of_others(dst, insert_at, 
-                               src, 0, zqueue_get_count(src));
-}
-
-zcount_t  zqueue_push_back_some_of_others(zqueue_t *dst, zqueue_t *src, 
-                                   zqidx_t src_start, 
-                                   zcount_t merge_count)
-{
-    return zqueue_insert_some_of_others(dst, zqueue_get_count(dst), 
-                               src, src_start, merge_count);
-}
-
-zcount_t  zqueue_push_back_all_of_others(zqueue_t *dst, zqueue_t *src)
-{
-    return zqueue_insert_some_of_others(dst, zqueue_get_count(dst), 
-                               src, 0, zqueue_get_count(src));
+    return 0;
 }
 
 zaddr_t zqueue_set_elem_val(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base)
 {
     zaddr_t base = zqueue_get_elem_base(q, qidx);
-    if (qidx && elem_base) {
+    if (base && elem_base) {
         memcpy(base, elem_base, q->elem_size);
         return base;
     }
@@ -498,7 +532,7 @@ static
 zaddr_t zqueue_elem_2_swap(zqueue_t *q, zqidx_t qidx)
 {
     zaddr_t base = zqueue_get_elem_base(q, qidx);
-    if (base) {
+    if (q->elem_swap && base) {
         memcpy(q->elem_swap, base, q->elem_size);
     }
     return base;
@@ -508,7 +542,7 @@ static
 zaddr_t zqueue_swap_2_elem(zqueue_t *q, zqidx_t qidx)
 {
     zaddr_t base = zqueue_get_elem_base(q, qidx);
-    if (base) {
+    if (q->elem_swap && base) {
         memcpy(base, q->elem_swap, q->elem_size);
     }
     return base;

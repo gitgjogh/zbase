@@ -94,15 +94,19 @@ int         zqueue_is_addr_in_use(zqueue_t *q, zaddr_t addr);
 zaddr_t     zqueue_get_front_base(zqueue_t *q);        //<! @ret q[0]
 zaddr_t     zqueue_get_back_base(zqueue_t *q);         //<! @ret q[count-1]
 zaddr_t     zqueue_get_last_base(zqueue_t *q);         //<! @ret q[count]
+#define     zqueue_get_elem             zqueue_qidx_2_base_in_use
+#define     zqueue_get_front            zqueue_get_front_base
+#define     zqueue_get_back             zqueue_get_back_base
+#define     zqueue_get_last             zqueue_get_last_base
 
 
 zaddr_t     zqueue_set_elem_val(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base);
 zaddr_t     zqueue_set_elem_val_itnl(zqueue_t *q, zqidx_t dst_idx, zqidx_t src_idx);
 
 
-zaddr_t     zqueue_pop_elem(zqueue_t *q, zqidx_t qidx);
-zaddr_t     zqueue_pop_front(zqueue_t *q);
-zaddr_t     zqueue_pop_back(zqueue_t *q);
+zcount_t    zqueue_pop_elem(zqueue_t *q, zqidx_t qidx, zaddr_t dst_base);
+zaddr_t     zqueue_pop_front(zqueue_t *q, zaddr_t dst_base);
+zaddr_t     zqueue_pop_back(zqueue_t *q, zaddr_t dst_base);
 
 //! insert at count is same to push back
 zaddr_t     zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base);
