@@ -99,9 +99,9 @@ zaddr_t     zarray_set_elem_val(zarray_t *za, zqidx_t qidx, zaddr_t elem_base);
 zaddr_t     zarray_set_elem_val_itnl(zarray_t *za, zqidx_t dst_idx, zqidx_t src_idx);
 
 
-zaddr_t     zarray_pop_elem(zarray_t *za, zqidx_t qidx);
-zaddr_t     zarray_pop_front(zarray_t *za);
-zaddr_t     zarray_pop_back(zarray_t *za);
+zcount_t    zarray_pop_elem(zarray_t *za, zqidx_t qidx, zaddr_t dst_base);
+zcount_t    zarray_pop_front(zarray_t *za, zaddr_t dst_base);
+zcount_t    zarray_pop_back(zarray_t *za, zaddr_t dst_base);
 
 //! insert at count is same to push back
 zaddr_t     zarray_insert_elem(zarray_t *za, zqidx_t qidx, zaddr_t elem_base);
@@ -137,7 +137,8 @@ zcount_t    zarray_push_back_all_of_others(
 
 typedef int32_t (*za_cmp_func_t)  (zaddr_t base1, zaddr_t base2);
 zaddr_t     zarray_find_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func);
-zaddr_t     zarray_pop_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func);
+zqidx_t     zarray_find_first_match_qidx(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func);
+zcount_t    zarray_pop_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func, zaddr_t dst_base);
 
 
 int         zarray_elem_cmp(zarray_t *za, za_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! za[qidx] - elem_base

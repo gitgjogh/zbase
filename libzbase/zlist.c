@@ -416,27 +416,34 @@ zaddr_t zlist_set_elem_val_itnl(zlist_t *zl, zqidx_t dst_idx, zqidx_t src_idx)
     return 0;
 }
 
-zaddr_t zlist_pop_elem(zlist_t *zl, zqidx_t qidx)
+zcount_t zlist_pop_elem(zlist_t *zl, zqidx_t qidx, zaddr_t dst_base)
 {
     zaddr_t base = zlist_get_elem_base(zl, qidx);
 
     if (base) {
+        if (dst_base) {
+            memcpy(dst_base, base, zl->elem_size);
+        }
+
+        /* swap to back */
         zmem_swap_near_block(&zl->qidx_2_bidx[qidx], sizeof(zqidx_t), 
                               1, zl->count-qidx-1);
         zl->count -= 1;
+
+        return 1;
     }
 
-    return base;
+    return 0;
 }
 
-zaddr_t zlist_pop_front(zlist_t *zl)
+zcount_t zlist_pop_front(zlist_t *zl, zaddr_t dst_base)
 {
-    return zlist_pop_elem(zl, 0);
+    return zlist_pop_elem(zl, 0, dst_base);
 }
 
-zaddr_t zlist_pop_back(zlist_t *zl)
+zcount_t zlist_pop_back(zlist_t *zl, zaddr_t dst_base)
 {
-    return zlist_pop_elem(zl, zl->count - 1);
+    return zlist_pop_elem(zl, zl->count - 1, dst_base);
 }
 
 zaddr_t zlist_insert_elem(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base)
@@ -565,8 +572,7 @@ int32_t zlist_safe_cmp(zl_cmp_func_t func, zaddr_t base1, zaddr_t base2)
     }
 }
 
-static 
-zqidx_t  zlist_find_first_match_idx(zlist_t *zl, 
+zqidx_t  zlist_find_first_match_qidx(zlist_t *zl, 
                                     zaddr_t elem_base, 
                                     zl_cmp_func_t func)
 
@@ -587,18 +593,17 @@ zqidx_t  zlist_find_first_match_idx(zlist_t *zl,
 }
 
 zaddr_t zlist_find_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func)
-
 {
-    zqidx_t qidx = zlist_find_first_match_idx(zl, cmp_base, func);
+    zqidx_t qidx = zlist_find_first_match_qidx(zl, cmp_base, func);
     
     return zlist_get_elem_base(zl, qidx);
 }
 
-zaddr_t zlist_pop_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func)
+zcount_t zlist_pop_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func, zaddr_t dst_base)
 {
-    zqidx_t qidx = zlist_find_first_match_idx(zl, cmp_base, func);
+    zqidx_t qidx = zlist_find_first_match_qidx(zl, cmp_base, func);
 
-    return zlist_pop_elem(zl, qidx);
+    return zlist_pop_elem(zl, qidx, dst_base);
 }
 
 int zlist_elem_cmp(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base)

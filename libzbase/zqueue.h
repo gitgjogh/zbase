@@ -105,8 +105,8 @@ zaddr_t     zqueue_set_elem_val_itnl(zqueue_t *q, zqidx_t dst_idx, zqidx_t src_i
 
 
 zcount_t    zqueue_pop_elem(zqueue_t *q, zqidx_t qidx, zaddr_t dst_base);
-zaddr_t     zqueue_pop_front(zqueue_t *q, zaddr_t dst_base);
-zaddr_t     zqueue_pop_back(zqueue_t *q, zaddr_t dst_base);
+zcount_t    zqueue_pop_front(zqueue_t *q, zaddr_t dst_base);
+zcount_t    zqueue_pop_back(zqueue_t *q, zaddr_t dst_base);
 
 //! insert at count is same to push back
 zaddr_t     zqueue_insert_elem(zqueue_t *q, zqidx_t qidx, zaddr_t elem_base);
@@ -141,8 +141,9 @@ zcount_t    zqueue_push_back_all_of_others(
 
 
 typedef int32_t (*zq_cmp_func_t)  (zaddr_t base1, zaddr_t base2);
+zqidx_t     zqueue_find_first_match_qidx(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func);
 zaddr_t     zqueue_find_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func);
-zaddr_t     zqueue_pop_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func);
+zcount_t    zqueue_pop_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func, zaddr_t dst_base);
 
 
 int         zqueue_elem_cmp(zqueue_t *q, zq_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! q[qidx] - elem_base

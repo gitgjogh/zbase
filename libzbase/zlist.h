@@ -106,9 +106,9 @@ zaddr_t     zlist_set_elem_val(zlist_t *zl, zqidx_t qidx, zaddr_t elem_base);
 zaddr_t     zlist_set_elem_val_itnl(zlist_t *zl, zqidx_t dst_idx, zqidx_t src_idx);
 
 
-zaddr_t     zlist_pop_elem(zlist_t *zl, zqidx_t qidx);
-zaddr_t     zlist_pop_front(zlist_t *zl);
-zaddr_t     zlist_pop_back(zlist_t *zl);
+zcount_t    zlist_pop_elem(zlist_t *zl, zqidx_t qidx, zaddr_t dst_base);
+zcount_t    zlist_pop_front(zlist_t *zl, zaddr_t dst_base);
+zcount_t    zlist_pop_back(zlist_t *zl, zaddr_t dst_base);
 
 
 //<! insert before qidx, insert at count is same to push back
@@ -144,8 +144,9 @@ zcount_t    zlist_push_back_all_of_others(
 
 
 typedef     int32_t (*zl_cmp_func_t) (zaddr_t cmp_base, zaddr_t elem_base);
+zqidx_t     zlist_find_first_match_qidx(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func);
 zaddr_t     zlist_find_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func);
-zaddr_t     zlist_pop_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func);
+zcount_t    zlist_pop_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func, zaddr_t dst_base);
 
 
 int         zlist_elem_cmp(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! za[qidx] - elem_base

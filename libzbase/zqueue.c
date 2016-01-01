@@ -562,8 +562,7 @@ int32_t zqueue_safe_cmp(zq_cmp_func_t func, zaddr_t base1, zaddr_t base2)
     }
 }
 
-zaddr_t zqueue_find_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func)
-
+zqidx_t zqueue_find_first_match_qidx(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func)
 {
     zqidx_t qidx;
     zcount_t count = zqueue_get_count(q);
@@ -573,21 +572,28 @@ zaddr_t zqueue_find_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t fu
         zaddr_t base = zqueue_get_elem_base(q, qidx);
         if ( 0 == zqueue_safe_cmp(func, base, elem_base) )
         {
-            return base;
+            return qidx;
         }
+    }
+
+    return -1;
+}
+
+zaddr_t zqueue_find_first_match(zqueue_t *q, zaddr_t elem_base, zq_cmp_func_t func)
+{
+    zqidx_t qidx = zqueue_find_first_match_qidx(q, elem_base, func);
+    if(qidx > 0) {
+        return zqueue_get_elem_base(q, qidx);
     }
 
     return 0;
 }
 
-zaddr_t zqueue_pop_first_match(zqueue_t *q, zaddr_t cmp_base, zq_cmp_func_t func)
+zcount_t zqueue_pop_first_match(zqueue_t *q, zaddr_t cmp_base, zq_cmp_func_t func, zaddr_t dst_base)
 {
-    zaddr_t front = zqueue_get_front_base(q);
-    zaddr_t base = zqueue_find_first_match(q, cmp_base, func);
-
-    if (front && base) {
-        zmem_swap(front, base, q->elem_size, 1);
-        return zqueue_pop_front(q);
+    zqidx_t qidx = zqueue_find_first_match_qidx(q, elem_base, func);
+    if(qidx > 0) {
+        return zqueue_pop_elem(q, qidx, dst_base);
     }
 
     return 0;

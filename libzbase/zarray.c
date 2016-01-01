@@ -289,27 +289,32 @@ zaddr_t   zarray_prev(za_iter_t *iter)
     return zarray_get_elem_base(iter->za, -- iter->iter_idx);
 }
 
-zaddr_t zarray_pop_elem(zarray_t *za, zqidx_t qidx)
+zcount_t zarray_pop_elem(zarray_t *za, zqidx_t qidx, zaddr_t dst_base)
 {
     zaddr_t base = zarray_get_elem_base(za, qidx);
     if (base) {
+        if (dst_base) {
+            memcpy(dst_base, base, za->elem_size);
+        }
+
+        /* swap to back */
         zmem_swap_near_block(base, za->elem_size, 1, za->count-qidx-1);
         za->count -= 1;
 
-        return zarray_qidx_2_base_in_buf(za, za->count);
+        return 1;
     }
 
     return 0;
 }
 
-zaddr_t zarray_pop_front(zarray_t *za)
+zcount_t zarray_pop_front(zarray_t *za, zaddr_t dst_base)
 {
-    return zarray_pop_elem(za, 0);
+    return zarray_pop_elem(za, 0, dst_base);
 }
 
-zaddr_t zarray_pop_back(zarray_t *za)
+zcount_t zarray_pop_back(zarray_t *za, zaddr_t dst_base)
 {
-    return zarray_pop_elem(za, za->count - 1);
+    return zarray_pop_elem(za, za->count - 1, dst_base);
 }
 
 zaddr_t zarray_insert_elem(zarray_t *za, zqidx_t qidx, zaddr_t elem_base)
@@ -483,8 +488,7 @@ int32_t zarray_safe_cmp(za_cmp_func_t func, zaddr_t base1, zaddr_t base2)
     }
 }
 
-zaddr_t zarray_find_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func)
-
+zqidx_t zarray_find_first_match_qidx(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func)
 {
     zqidx_t qidx;
     zcount_t count = zarray_get_count(za);
@@ -494,21 +498,29 @@ zaddr_t zarray_find_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t f
         zaddr_t base = zarray_get_elem_base(za, qidx);
         if ( 0 == zarray_safe_cmp(func, base, elem_base) )
         {
-            return base;
+            return qidx;
         }
+    }
+
+    return -1;
+}
+
+zaddr_t zarray_find_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t func)
+{
+    zqidx_t qidx = zarray_find_first_match_qidx(za, elem_base, func);
+    if (qidx >= 0) {
+        return ZARRAY_ELEM_BASE(za, qidx);
     }
 
     return 0;
 }
 
-zaddr_t zarray_pop_first_match(zarray_t *za, zaddr_t cmp_base, za_cmp_func_t func)
+zcount_t zarray_pop_first_match(zarray_t *za, zaddr_t cmp_base, za_cmp_func_t func, zaddr_t dst_base)
 {
-    zaddr_t front = zarray_get_front_base(za);
-    zaddr_t base = zarray_find_first_match(za, cmp_base, func);
+    zaddr_t qidx = zarray_find_first_match_qidx(za, cmp_base, func);
 
-    if (front && base) {
-        zmem_swap(front, base, za->elem_size, 1);
-        return zarray_pop_front(za);
+    if (qidx >= 0) {
+        return zarray_pop_elem(za, qidx, dst_base);
     }
 
     return 0;

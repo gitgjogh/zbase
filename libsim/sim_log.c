@@ -97,7 +97,9 @@ int slogv(slog_t *sl, int level, const char *prompt, const char *fmt, va_list ap
         if (prompt) {
             fprintf(fp, "@%s>> ", prompt);
         }
-        return vfprintf(fp, fmt, ap);
+        int ret = vfprintf(fp, fmt, ap);
+        fflush(fp);
+        return ret;
     }
 
     return 0;

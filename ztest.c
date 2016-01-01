@@ -53,7 +53,7 @@ void str_printf(zqidx_t idx, zaddr_t elem_base)
 int zlist_test(int argc, char** argv)
 {
     int item, idx;
-    zaddr_t ret, popped;
+    zaddr_t ret, popped = &item;
 
     zlist_t *q1 = ZLIST_MALLOC_D(int, 10);
     zlist_t *q2 = ZLIST_MALLOC_S(int, 20);
@@ -72,25 +72,23 @@ int zlist_test(int argc, char** argv)
     ret = zlist_push_back(q1, SET_ITEM(12));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
     zlist_print(q1, "push 11,12", int_printf, ", ", "\n\n");
 
-    popped = zlist_pop_front(q1);     
-    popped ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("pop fail \n");
-    popped = zlist_pop_front(q1);     
-    popped ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("pop fail \n");
+    zlist_pop_front(q1, popped) ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("pop fail \n");
+    zlist_pop_front(q1, popped) ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("pop fail \n");
     zlist_print(q1, "pop front 2 items", int_printf, ", ", "\n\n");
 
-    popped = zlist_pop_first_match(q1, SET_ITEM(7),  int_cmpf);     
-    printf("pop %d ", item);
-    popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
+    zlist_pop_first_match(q1, SET_ITEM(7), int_cmpf, popped) 
+        ? printf("pop %d = %d \n", item, DEREF_I32(popped)) 
+        : printf("pop %d failed\n", item);
     zlist_print(q1, "pop first match 7", int_printf, ", ", "\n\n");
 
-    popped = zlist_pop_first_match(q1, SET_ITEM(8),  int_cmpf);     
-    printf("pop %d ", item);
-    popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
+    zlist_pop_first_match(q1, SET_ITEM(8), int_cmpf, popped) 
+        ? printf("pop %d = %d \n", item, DEREF_I32(popped)) 
+        : printf("pop %d failed\n", item);
     zlist_print(q1, "pop first match 8", int_printf, ", ", "\n\n");
 
-    popped = zlist_pop_first_match(q1, SET_ITEM(11), int_cmpf);     
-    printf("pop %d ", item);
-    popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
+    zlist_pop_first_match(q1, SET_ITEM(11), int_cmpf, popped) 
+        ? printf("pop %d = %d \n", item, DEREF_I32(popped)) 
+        : printf("pop %d failed\n", item);
     zlist_print(q1, "pop first match 11", int_printf, ", ", "\n\n");
 
     ret = zlist_insert_elem(q1, 0, SET_ITEM(11));     
@@ -117,7 +115,7 @@ int zlist_test(int argc, char** argv)
 int zarray_test(int argc, char** argv)
 {
     int item, idx;
-    zaddr_t ret, popped;
+    zaddr_t ret, popped = &item;
 
     zarray_t *za = ZARRAY_MALLOC_S(int, 10);
     for(idx=1; idx<8; ++idx)
@@ -133,26 +131,23 @@ int zarray_test(int argc, char** argv)
     ret = zarray_push_back(za, SET_ITEM(12));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
     zarray_print(za, "push 11,12", int_printf, ", ", "\n\n");
 
-    popped = zarray_pop_front(za);     
-    popped ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("\n pop fail \n");
-    popped = zarray_pop_front(za);     
-    popped ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("\n pop fail \n");
+    zarray_pop_front(za, popped) ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("\n pop fail \n");
     zarray_print(za, "pop front 2 items", int_printf, ", ", "\n\n");
 
-    popped = zarray_pop_first_match(za, SET_ITEM(7),  int_cmpf);     
-    printf("pop %d ", item);
-    popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
+    zarray_pop_first_match(za, SET_ITEM(7), int_cmpf, popped) 
+        ? printf("pop %d = %d \n", item, DEREF_I32(popped)) 
+        : printf("pop %d failed\n", item);
     zarray_print(za, "pop first match 7", int_printf, ", ", "\n\n");
 
-    popped = zarray_pop_first_match(za, SET_ITEM(8),  int_cmpf);     
-    printf("pop %d ", item);
-    popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
-    zarray_print(za, "pop first match 10", int_printf, ", ", "\n\n");
+    zarray_pop_first_match(za, SET_ITEM(8), int_cmpf, popped) 
+        ? printf("pop %d = %d \n", item, DEREF_I32(popped)) 
+        : printf("pop %d failed\n", item);
+    zarray_print(za, "pop first match 7", int_printf, ", ", "\n\n");
 
-    popped = zarray_pop_first_match(za, SET_ITEM(11), int_cmpf);     
-    printf("pop %d ", item);
-    popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
-    zarray_print(za, "pop first match 11", int_printf, ", ", "\n\n");
+    zarray_pop_first_match(za, SET_ITEM(11), int_cmpf, popped) 
+        ? printf("pop %d = %d \n", item, DEREF_I32(popped)) 
+        : printf("pop %d failed\n", item);
+    zarray_print(za, "pop first match 7", int_printf, ", ", "\n\n");
 
     ret = zarray_push_front(za, SET_ITEM(11));     
     printf("push front %d ", item);

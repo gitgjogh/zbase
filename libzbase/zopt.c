@@ -354,7 +354,7 @@ zaddr_t zopt_end_group(zopt_t *opt, const char   *key)
         return 0;
     }
 
-    father = zarray_pop_back(opt->access_stack);
+    father = zarray_pop_back(opt->access_stack, 0);
     return *father;
 }
 

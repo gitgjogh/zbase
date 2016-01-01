@@ -612,7 +612,7 @@ zaddr_t     zhtree_iter_right_up(zht_iter_t *iter)
         if (iter->curr) {
             return iter->curr;
         } else {
-            zarray_pop_back(iter->iterq);
+            zarray_pop_back(iter->iterq, 0);
             return zhtree_iter_right_up(iter);
         }
     }
@@ -664,7 +664,7 @@ zaddr_t     zhtree_iter_prev(zht_iter_t *iter)
         zht_child_iter_t *parent_context = zarray_get_back_base(iter->iterq);
         iter->curr = zht_child_iter_prev(parent_context);   // prev sibling
         if (!iter->curr) {
-            zarray_pop_back(iter->iterq);
+            zarray_pop_back(iter->iterq, 0);
             iter->curr = parent_context->parent;
             return iter->curr;
         } else {
