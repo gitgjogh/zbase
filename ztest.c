@@ -19,7 +19,7 @@
 
 #include "zlist.h"
 //#include "zopt.h"
-#include "zqueue.h"
+#include "zarray.h"
 #include "zstrq.h"
 #include "zhash.h"
 #include "zhtree.h"
@@ -114,55 +114,55 @@ int zlist_test(int argc, char** argv)
     return 0;
 }
 
-int zqueue_test(int argc, char** argv)
+int zarray_test(int argc, char** argv)
 {
     int item, idx;
     zaddr_t ret, popped;
 
-    zqueue_t *q = ZQUEUE_MALLOC_S(int, 10);
+    zarray_t *za = ZARRAY_MALLOC_S(int, 10);
     for(idx=1; idx<8; ++idx)
-        zqueue_push_back(q, &idx);
-    zqueue_print(q, "init with 1~7, size=10", int_printf, ", ", "\n\n");
+        zarray_push_back(za, &idx);
+    zarray_print(za, "init with 1~7, size=10", int_printf, ", ", "\n\n");
 
-    ret = zqueue_push_back(q, SET_ITEM(8));    printf("push %d %s \n", item, ret ? "success" : "fail");   
-    ret = zqueue_push_back(q, SET_ITEM(9));    printf("push %d %s \n", item, ret ? "success" : "fail");  
-    ret = zqueue_push_back(q, SET_ITEM(10));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
-    zqueue_print(q, "push 8,9,10 ", int_printf, ", ", "\n\n");
+    ret = zarray_push_back(za, SET_ITEM(8));    printf("push %d %s \n", item, ret ? "success" : "fail");   
+    ret = zarray_push_back(za, SET_ITEM(9));    printf("push %d %s \n", item, ret ? "success" : "fail");  
+    ret = zarray_push_back(za, SET_ITEM(10));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
+    zarray_print(za, "push 8,9,10 ", int_printf, ", ", "\n\n");
 
-    ret = zqueue_push_back(q, SET_ITEM(11));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
-    ret = zqueue_push_back(q, SET_ITEM(12));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
-    zqueue_print(q, "push 11,12", int_printf, ", ", "\n\n");
+    ret = zarray_push_back(za, SET_ITEM(11));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
+    ret = zarray_push_back(za, SET_ITEM(12));   printf("push %d %s \n", item, ret ? "success" : "fail"); 
+    zarray_print(za, "push 11,12", int_printf, ", ", "\n\n");
 
-    popped = zqueue_pop_front(q);     
+    popped = zarray_pop_front(za);     
     popped ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("\n pop fail \n");
-    popped = zqueue_pop_front(q);     
+    popped = zarray_pop_front(za);     
     popped ? printf("pop front = %d \n", DEREF_I32(popped)) : printf("\n pop fail \n");
-    zqueue_print(q, "pop front 2 items", int_printf, ", ", "\n\n");
+    zarray_print(za, "pop front 2 items", int_printf, ", ", "\n\n");
 
-    popped = zqueue_pop_first_match(q, SET_ITEM(7),  int_cmpf);     
+    popped = zarray_pop_first_match(za, SET_ITEM(7),  int_cmpf);     
     printf("pop %d ", item);
     popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
-    zqueue_print(q, "pop first match 7", int_printf, ", ", "\n\n");
+    zarray_print(za, "pop first match 7", int_printf, ", ", "\n\n");
 
-    popped = zqueue_pop_first_match(q, SET_ITEM(8),  int_cmpf);     
+    popped = zarray_pop_first_match(za, SET_ITEM(8),  int_cmpf);     
     printf("pop %d ", item);
     popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
-    zqueue_print(q, "pop first match 10", int_printf, ", ", "\n\n");
+    zarray_print(za, "pop first match 10", int_printf, ", ", "\n\n");
 
-    popped = zqueue_pop_first_match(q, SET_ITEM(11), int_cmpf);     
+    popped = zarray_pop_first_match(za, SET_ITEM(11), int_cmpf);     
     printf("pop %d ", item);
     popped ?  printf("= %d \n", DEREF_I32(popped)) : printf("fail \n");
-    zqueue_print(q, "pop first match 11", int_printf, ", ", "\n\n");
+    zarray_print(za, "pop first match 11", int_printf, ", ", "\n\n");
 
-    ret = zqueue_push_front(q, SET_ITEM(11));     
+    ret = zarray_push_front(za, SET_ITEM(11));     
     printf("push front %d ", item);
     ret ?  printf("= %d \n", DEREF_I32(ret)) : printf("fail \n");
-    zqueue_print(q, "push 11 at front ", int_printf, ", ", "\n\n");
+    zarray_print(za, "push 11 at front ", int_printf, ", ", "\n\n");
 
-    zqueue_quick_sort(q, int_cmpf);
-    zqueue_print(q, "quick sort", int_printf, ", ", "\n\n");
+    zarray_quick_sort(za, int_cmpf);
+    zarray_print(za, "quick sort", int_printf, ", ", "\n\n");
 
-    zqueue_free(q);
+    zarray_free(za);
 
     return 0;
 }
@@ -300,8 +300,9 @@ int zopt_test(int argc, char **argv)
 */
 
 static
-void zht_printf(zqidx_t idx, zht_node_t *node)
+void zht_printf(zqidx_t idx, zaddr_t base)
 {
+    zht_node_t *node = base;
     printf("%d:%s", idx, node->key);
 }
 
@@ -320,7 +321,7 @@ int zhtree_test(int argc, char **argv)
     zhtree_touch_node(h, "ac", 0);
     zhtree_touch_node(h, "name", 0);
 
-    zqueue_print(h->nodeq, "zhtree->nodeq", zht_printf, ", ", "\n");
+    zarray_print(h->nodeq, "zhtree->nodeq", zht_printf, ", ", "\n");
     //zhtree_free(h);
     //return 0;
 
@@ -362,7 +363,7 @@ int main(int argc, char **argv)
     const static yuv_module_t sub_main[] = {
         {"list",    zlist_test,     ""},
         //{"opt",     zopt_test,      ""},
-        {"queue",   zqueue_test,    ""},
+        {"array",   zarray_test,    ""},
         {"strq",    zstrq_test,     ""},
         {"hash",    zhash_test,     ""},
         {"zhtree",  zhtree_test,    ""},

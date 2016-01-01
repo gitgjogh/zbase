@@ -22,8 +22,8 @@
 #include "sim_log.h"
 
 
-#define     ZLIST_NEAREST_BIDX(q, addr) \
-        ((((char *)(addr))-((char *)(q->elem_array))) / (q->elem_size))
+#define     ZLIST_NEAREST_BIDX(zl, addr) \
+        ((((char *)(addr))-((char *)(zl->elem_array))) / (zl->elem_size))
 
 static zbidx_t  zlist_qidx_2_bidx_in_buf(zlist_t *zl, zqidx_t qidx);
 static zbidx_t  zlist_qidx_2_bidx_in_use(zlist_t *zl, zqidx_t qidx);

@@ -17,7 +17,7 @@
 /**
  * \terminology
  *  -bidx   elem buffer index in the buffer array
- *  -qidx   elem logi index in the abstract list/queue
+ *  -qidx   elem logi index in the abstract list/array
  */
 
 #ifndef ZLIST_H_
@@ -58,7 +58,7 @@ void        zlist_buf_free(zlist_t *zl);
  *                          in addition to zlist_get_count()
  * @return zlist_get_space() after buf grow. 
  */
-zspace_t    zlist_buf_grow(zlist_t *q, uint32_t additional_count);
+zspace_t    zlist_buf_grow(zlist_t *zl, uint32_t additional_count);
 
 
 zlist_t*    zlist_malloc(uint32_t elem_size, uint32_t depth, int b_allow_realloc);
@@ -66,7 +66,7 @@ zlist_t*    zlist_malloc_s(uint32_t elem_size, uint32_t depth);
 zlist_t*    zlist_malloc_d(uint32_t elem_size, uint32_t depth);
 #define     ZLIST_MALLOC_S(type_t, depth)    zlist_malloc_s(sizeof(type_t), (depth))
 #define     ZLIST_MALLOC_D(type_t, depth)    zlist_malloc_d(sizeof(type_t), (depth))
-void        zlist_free(zlist_t *q);
+void        zlist_free(zlist_t *zl);
 
 
 zcount_t    zlist_get_depth(zlist_t *zl);
@@ -74,8 +74,8 @@ zcount_t    zlist_get_count(zlist_t *zl);
 zspace_t    zlist_get_space(zlist_t *zl);
 
 
-#define     ZLIST_ELEM_BASE(q, bidx) \
-        ((zaddr_t)(((char *)q->elem_array) + (bidx) * q->elem_size))
+#define     ZLIST_ELEM_BASE(zl, bidx) \
+        ((zaddr_t)(((char *)zl->elem_array) + (bidx) * zl->elem_size))
 zaddr_t     zlist_qidx_2_base_in_buf(zlist_t *zl, zqidx_t qidx);
 zaddr_t     zlist_qidx_2_base_in_use(zlist_t *zl, zqidx_t qidx);
 int         zlist_is_qidx_in_buf(zlist_t *zl, zqidx_t qidx);
@@ -148,8 +148,8 @@ zaddr_t     zlist_find_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t 
 zaddr_t     zlist_pop_first_match(zlist_t *zl, zaddr_t cmp_base, zl_cmp_func_t func);
 
 
-int         zlist_elem_cmp(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! q[qidx] - elem_base
-int         zlist_elem_cmp_itnl(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx_1, zqidx_t qidx_2);    //<! q[qidx_1] - q[qidx_2]   
+int         zlist_elem_cmp(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx, zaddr_t elem_base);       //<! za[qidx] - elem_base
+int         zlist_elem_cmp_itnl(zlist_t *zl, zl_cmp_func_t func, zqidx_t qidx_1, zqidx_t qidx_2);    //<! za[qidx_1] - za[qidx_2]   
 
 void        zlist_quick_sort(zlist_t *zl, zl_cmp_func_t func);
 void        zlist_quick_sort_i32(zlist_t *zl);

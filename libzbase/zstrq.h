@@ -18,14 +18,14 @@
 #define ZSTRQ_H_
 
 #include "zdefs.h"
-#include "zqueue.h"
+#include "zarray.h"
 
 
 typedef     char            zsq_char_t;
 typedef     zsq_char_t*     zsq_ptr_t;
 
 
-typedef struct z_string_queue
+typedef struct z_string_array
 {
     zspace_t        buf_size;
     zcount_t        buf_used;
@@ -42,7 +42,7 @@ zstrq_t*    zstrq_malloc(uint32_t size);
 zstrq_t*    zstrq_realloc(zstrq_t *sq, uint32_t new_size);
 void        zstrq_free(zstrq_t *sq);
 zspace_t    zstrq_get_buf_size(zstrq_t *sq);
-zcount_t    zstrq_get_str_count(zstrq_t *sq);       /** num of str in queue */
+zcount_t    zstrq_get_str_count(zstrq_t *sq);       /** num of str in array */
 zspace_t    zstrq_get_buf_space(zstrq_t *sq);       /** size of usable character buf */
 
 zsq_char_t* zstrq_get_str_base(zstrq_t *sq, zqidx_t qidx);    //<! 0<= qidx < count

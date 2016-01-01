@@ -34,8 +34,8 @@ zhash_t *zhash_malloc(uint32_t node_size, uint32_t depth_log2)
     zh->depth = 1 << depth_log2;
 
     zh->hash_tbl = calloc(zh->depth, sizeof(zh_head_t));
-    zh->nodeq = zqueue_malloc_s(node_size, zh->depth);
-    zqueue_memzero(zh->nodeq);
+    zh->nodeq = zarray_malloc_s(node_size, zh->depth);
+    zarray_memzero(zh->nodeq);
     zh->strq  = zstrq_malloc(0);
 
     if (!zh->hash_tbl || !zh->nodeq || !zh->strq) {
@@ -51,7 +51,7 @@ void zhash_free(zhash_t *h)
 {
     if (h) {
         if (h->hash_tbl) { free(h->hash_tbl); }
-        if (h->nodeq) { zqueue_free(h->nodeq); }
+        if (h->nodeq) { zarray_free(h->nodeq); }
         if (h->strq) { zstrq_free(h->strq); }
         free(h);
     }
@@ -122,7 +122,7 @@ zaddr_t     zhash_touch_node(zhash_t    *h,
     {
         zsq_char_t *saved_key = 0;
 
-        if ( zqueue_get_space(h->nodeq) <= 0 ) {
+        if ( zarray_get_space(h->nodeq) <= 0 ) {
             xerr("<zhash> hash table overflow!\n");
             h->ret_flag |= ZHASH_NODE_BUF_OVERFLOW;
             return 0;
@@ -135,7 +135,7 @@ zaddr_t     zhash_touch_node(zhash_t    *h,
             return 0;
         }
         
-        node = zqueue_push_back(h->nodeq, 0);
+        node = zarray_push_back(h->nodeq, 0);
         node->hash = hash;
         node->key  = saved_key;
 
@@ -190,23 +190,23 @@ zh_iter_t   zhash_iter(zhash_t *h)
 }
 zaddr_t zhash_iter_curr(zh_iter_t *iter)
 {
-    return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx);
+    return zarray_get_elem_base(iter->h->nodeq, iter->iter_idx);
 }
 
 zaddr_t zhash_iter_front(zh_iter_t *iter) 
 {
-    return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=0);
+    return zarray_get_elem_base(iter->h->nodeq, iter->iter_idx=0);
 }
 zaddr_t zhash_iter_back(zh_iter_t *iter)  
 { 
-    zcount_t count = zqueue_get_count(iter->h->nodeq);
-    return zqueue_get_elem_base(iter->h->nodeq, iter->iter_idx=count-1);
+    zcount_t count = zarray_get_count(iter->h->nodeq);
+    return zarray_get_elem_base(iter->h->nodeq, iter->iter_idx=count-1);
 }
 zaddr_t zhash_iter_next(zh_iter_t *iter)  
 { 
-    return zqueue_get_elem_base(iter->h->nodeq, ++ iter->iter_idx);
+    return zarray_get_elem_base(iter->h->nodeq, ++ iter->iter_idx);
 }
 zaddr_t zhash_iter_prev(zh_iter_t *iter)  
 { 
-    return zqueue_get_elem_base(iter->h->nodeq, -- iter->iter_idx);
+    return zarray_get_elem_base(iter->h->nodeq, -- iter->iter_idx);
 }

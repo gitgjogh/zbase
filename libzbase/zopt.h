@@ -60,7 +60,7 @@ typedef struct zopt_node {
 
 typedef struct zhash_parser {
     zhash_t*        h;
-    zqueue_t*       access_stack;
+    zarray_t*       access_stack;
 }zopt_t;
 
 
