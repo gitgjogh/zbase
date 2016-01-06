@@ -18,6 +18,7 @@
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "sim_opt.h"
 
@@ -368,7 +369,12 @@ int ref_ival_2_idx(int nref, const opt_ref_t *refs, int val)
 {
     int i;
     char s[256] = {0};
-    snprintf(s, 256, "%d", val);
+
+#ifdef WIN32
+    _snprintf(s, 256, "%d", val);
+#else
+	snprintf(s, 256, "%d", val);
+#endif
     return ref_sval_2_idx(nref, refs, s);
 }
 

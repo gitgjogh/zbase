@@ -107,7 +107,7 @@ int slogv(slog_t *sl, int level, const char *prompt, const char *fmt, va_list ap
 
 int xlogv(int level, const char *prompt, const char *fmt, va_list ap)
 {
-    slogv(&g_slog_obj, level, prompt, fmt, ap);
+    return slogv(&g_slog_obj, level, prompt, fmt, ap);
 }
 
 int slog (slog_t *sl, int level, const char *prompt, const char *fmt, ...)

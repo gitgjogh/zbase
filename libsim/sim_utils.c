@@ -16,6 +16,7 @@
 
 #include <limits.h>
 #include <string.h>
+#include <ctype.h>
 #include <math.h>
 
 #include "sim_utils.h"
