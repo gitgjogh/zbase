@@ -21,6 +21,12 @@
 #include "zarray.h"
 #include "zstrq.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef     uint32_t        zh_hval_t;      /* type for hash value */
 typedef     int32_t         zh_type_t;
 typedef struct zhash_node   zh_node_t;
@@ -114,5 +120,10 @@ zaddr_t     zhash_iter_prev(zh_iter_t *iter);
     for (zhash_iter_back(&iter); zh_link_iter_curr(&iter); zhash_iter_prev(&iter))
 #define     WHILE_ZHASH_ITER_POSTORDER(iter, node) \
     for (node = zhash_iter_back(&iter); node; node = zhash_iter_prev(&iter))
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif // ZHASH_H_

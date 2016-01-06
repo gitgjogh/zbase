@@ -19,6 +19,12 @@
 
 #include "zdefs.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef struct z_array
 {
     zspace_t  depth;
@@ -166,5 +172,8 @@ zaddr_t     zarray_back(za_iter_t *iter);
 zaddr_t     zarray_prev(za_iter_t *iter);
 
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //ZARRAY_H_

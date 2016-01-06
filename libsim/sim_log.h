@@ -19,6 +19,12 @@
 
 #include <stdarg.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef enum slog_level {
     SLOG_NON        = 0,
     SLOG_ERR        ,
@@ -71,5 +77,9 @@ static int fcall_layer = 0;
 #define LEAVE_FUNC()  \
     xlog(SLOG_FUNC, "---", "%-2d: %s(-)\n\n", --fcall_layer, __FUNCTION__)
 
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif  // __SIM_LOG_H__

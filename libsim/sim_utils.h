@@ -23,6 +23,11 @@
 #include <limits.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 #ifndef uint8_t
 #define uint8_t         unsigned char
 #endif
@@ -242,5 +247,10 @@ int str_2_int(const char *_str, int *ret_);
     if (ptr) { free(ptr); } \
     ptr = 0;                \
 } while (0)
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif  // __SIM_UTILS_H__

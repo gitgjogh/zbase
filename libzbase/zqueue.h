@@ -19,6 +19,12 @@
 
 #include "zdefs.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef struct z_queue
 {
     zspace_t  depth;
@@ -171,5 +177,8 @@ zaddr_t     zqueue_back(zq_iter_t *iter);
 zaddr_t     zqueue_prev(zq_iter_t *iter);
 
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //ZQUEUE_H_

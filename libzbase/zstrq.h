@@ -21,6 +21,11 @@
 #include "zarray.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef     char            zsq_char_t;
 typedef     zsq_char_t*     zsq_ptr_t;
 
@@ -69,5 +74,9 @@ zcount_t    zstrq_push_back_list(zstrq_t *dst,
 typedef void  (*zsq_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
 void        zstrq_print(zstrq_t *sq, char *sq_name, zsq_print_func_t func,
                         const char *delimiters, const char *terminator);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //ZSTRQ_H_

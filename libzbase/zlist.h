@@ -26,6 +26,11 @@
 #include "zdefs.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 /**
  *  zlist[qidx] = elem_array[ bidx_array[qidx] ]
  */
@@ -160,5 +165,9 @@ void        zlist_quick_sort_u32(zlist_t *zl);
 typedef void  (*zl_print_func_t)  (zqidx_t idx, zaddr_t elem_base);
 void        zlist_print(zlist_t *zl, const char *zl_name, zl_print_func_t func,
                     const char *delimiters, const char *terminator);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //ZLIST_H_

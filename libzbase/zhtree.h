@@ -19,6 +19,12 @@
 
 #include "zhash.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef struct zhtree_node zht_node_t;
 
 #define ZHTREE_NODE_COMMON  union {\
@@ -181,5 +187,10 @@ zaddr_t     zhtree_iter_prev(zht_iter_t *iter);
 
 #define WHILE_GET_ZHT_NODE_REVERSE(iter, node) \
     for (node = zhtree_iter_back(iter); node; node = zhtree_iter_prev(iter))
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif // ZHTREE_H_

@@ -19,6 +19,12 @@
 
 #include "zhash.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef struct arg_iterator {
     int     argc;
     char  **argv;
@@ -97,5 +103,10 @@ int zopt_parse_str(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node);
 int zopt_parse_enum(zopt_t *opt, zarg_iter_t *iter, zopt_node_t *node);
 int zopt_create_enum(zopt_t *opt, zopt_node_t *node, const char* desc);
 void zopt_print_enum(zopt_t *opt, zopt_node_t *node);
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //#ifndef ZOPT_H_

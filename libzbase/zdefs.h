@@ -19,6 +19,12 @@
 
 #include "sim_utils.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 typedef     void*           zaddr_t;
 typedef     void*           zfunc_t;
 typedef     void*           zfile_t;
@@ -31,5 +37,10 @@ typedef     int32_t         zbidx_t;            //<! buffer idx
 
 #define zmem_swap               mem_swap
 #define zmem_swap_near_block    mem_swap_near_block
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //#ifndef ZDEFS_H_

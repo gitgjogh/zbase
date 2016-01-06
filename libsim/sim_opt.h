@@ -22,6 +22,11 @@
 #include "sim_log.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 #define EMPTYSTR                ("")
 #define SAFE_STR(s, nnstr)      ((s)?(s):(nnstr))
 
@@ -121,5 +126,10 @@ int cmdl_parse_opt(int i, int argc, char *argv[], opt_desc_t *opt);
 int cmdl_help(int optc, opt_desc_t optv[]);
 int cmdl_check(int optc, opt_desc_t optv[]);
 int cmdl_result(int optc, opt_desc_t optv[]);
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif  // __SIM_OPT_H__
