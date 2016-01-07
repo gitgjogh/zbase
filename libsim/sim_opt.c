@@ -110,6 +110,55 @@ int ios_feof(ios_t *p, int ich)
     return feof((FILE*)p[ich].fp);
 }
 
+sarg_iter_t  sarg_iter_init(int argc, char **argv, int start)
+{
+    sarg_iter_t iter = { argv, argc, start };
+    return iter;
+}
+
+char*   sarg_get_ith(sarg_iter_t *iter, int i)
+{
+    if (iter->argv && i >= 0 && i < iter->argc) {
+        return iter->argv[i];
+    }
+    return 0;
+}
+
+char*   sarg_iter_1st (sarg_iter_t *iter)
+{
+    return sarg_get_ith(iter, iter->idx = iter->start);
+}
+
+char*   sarg_iter_next(sarg_iter_t *iter)
+{
+    return sarg_get_ith(iter, ++ iter->idx);
+}
+
+char*   sarg_iter_last(sarg_iter_t *iter)
+{
+    return sarg_get_ith(iter, iter->idx = iter->argc - 1);
+}
+
+char*   sarg_iter_prev(sarg_iter_t *iter)
+{
+    return sarg_get_ith(iter, -- iter->idx);
+}
+
+char*   sarg_iter_curr(sarg_iter_t *iter)
+{
+    return sarg_get_ith(iter, iter->idx);
+}
+
+char*   sarg_peek_next(sarg_iter_t *iter)
+{
+    return sarg_get_ith(iter, 1 + iter->idx);
+}
+
+char*   sarg_peek_ith (sarg_iter_t *iter, int ith)
+{
+    return sarg_get_ith(iter, ith + iter->idx);
+}
+
 char *get_argv(int argc, char *argv[], int i, const char *name)
 {
     int s = (argv && i<argc) ? argv[i][0] : 0;

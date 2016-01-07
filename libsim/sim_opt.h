@@ -48,6 +48,24 @@ int     ios_close(ios_t *p, int nch);
 int     ios_feof(ios_t *p, int ich);
 
 
+typedef struct sarg_iter {
+    char**  argv;
+    int     argc;
+    int     start;
+    int     idx;
+} sarg_iter_t;
+
+sarg_iter_t  sarg_iter_init(int argc, char **argv, int start);
+char*   sarg_get_ith  (sarg_iter_t *iter, int ith);     /** argv[ith] */
+char*   sarg_iter_1st (sarg_iter_t *iter);
+char*   sarg_iter_next(sarg_iter_t *iter);
+char*   sarg_iter_last(sarg_iter_t *iter);
+char*   sarg_iter_prev(sarg_iter_t *iter);
+char*   sarg_iter_curr(sarg_iter_t *iter);              /** argv[iter->idx] */
+char*   sarg_peek_next(sarg_iter_t *iter);              /** argv[1 + iter->idx] */
+char*   sarg_peek_ith (sarg_iter_t *iter, int ith);     /** argv[ith + iter->idx] */
+
+
 #define GET_ARGV(idx, name) get_argv(argc, argv, idx, name);
 char*   get_argv(int argc, char *argv[], int i, const char *name);
 
