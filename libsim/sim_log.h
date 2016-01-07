@@ -34,8 +34,8 @@ typedef enum slog_level {
     SLOG_INFO       ,
     SLOG_DEFULT     = 30,
     SLOG_PRINT      = SLOG_DEFULT,
-    SLOG_DBG        = 50,
-    SLOG_CMDL       = 55,
+    SLOG_CMDL       = 50,
+    SLOG_DBG        = 55,
     SLOG_MEM        = 60,
     SLOG_IOS        = 70,
     SLOG_FUNC       = 80,
@@ -66,6 +66,7 @@ int xlog (int level, const char *prompt, const char *fmt, ...);
 #define xerr(...)               xlog(SLOG_ERR, "err", __VA_ARGS__)
 #define xwarn(...)              xlog(SLOG_WARN, "warn", __VA_ARGS__)
 #define xdbg(...)               xlog(SLOG_DBG, "dbg", __VA_ARGS__)
+#define xinfo(...)              xlog(SLOG_INFO, 0, __VA_ARGS__)
 #define xprint(...)             xlog(SLOG_PRINT, 0, __VA_ARGS__)
 #define xlog_ios(...)           xlog(SLOG_IOS, "ios", __VA_ARGS__)
 #define xlog_cmdl(...)          xlog(SLOG_CMDL, "cmdl", __VA_ARGS__)
