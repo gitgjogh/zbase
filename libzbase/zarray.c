@@ -517,7 +517,7 @@ zaddr_t zarray_find_first_match(zarray_t *za, zaddr_t elem_base, za_cmp_func_t f
 
 zcount_t zarray_pop_first_match(zarray_t *za, zaddr_t cmp_base, za_cmp_func_t func, zaddr_t dst_base)
 {
-    zaddr_t qidx = zarray_find_first_match_qidx(za, cmp_base, func);
+    zqidx_t qidx = zarray_find_first_match_qidx(za, cmp_base, func);
 
     if (qidx >= 0) {
         return zarray_pop_elem(za, qidx, dst_base);
