@@ -110,55 +110,6 @@ int ios_feof(ios_t *p, int ich)
     return feof((FILE*)p[ich].fp);
 }
 
-sarg_iter_t  sarg_iter_init(int argc, char **argv, int start)
-{
-    sarg_iter_t iter = { argv, argc, start };
-    return iter;
-}
-
-char*   sarg_get_ith(sarg_iter_t *iter, int i)
-{
-    if (iter->argv && i >= 0 && i < iter->argc) {
-        return iter->argv[i];
-    }
-    return 0;
-}
-
-char*   sarg_iter_1st (sarg_iter_t *iter)
-{
-    return sarg_get_ith(iter, iter->idx = iter->start);
-}
-
-char*   sarg_iter_next(sarg_iter_t *iter)
-{
-    return sarg_get_ith(iter, ++ iter->idx);
-}
-
-char*   sarg_iter_last(sarg_iter_t *iter)
-{
-    return sarg_get_ith(iter, iter->idx = iter->argc - 1);
-}
-
-char*   sarg_iter_prev(sarg_iter_t *iter)
-{
-    return sarg_get_ith(iter, -- iter->idx);
-}
-
-char*   sarg_iter_curr(sarg_iter_t *iter)
-{
-    return sarg_get_ith(iter, iter->idx);
-}
-
-char*   sarg_peek_next(sarg_iter_t *iter)
-{
-    return sarg_get_ith(iter, 1 + iter->idx);
-}
-
-char*   sarg_peek_ith (sarg_iter_t *iter, int ith)
-{
-    return sarg_get_ith(iter, ith + iter->idx);
-}
-
 char *get_argv(int argc, char *argv[], int i, const char *name)
 {
     int s = (argv && i<argc) ? argv[i][0] : 0;
@@ -307,91 +258,6 @@ int arg_parse_xlevel(int i, int argc, char *argv[])
     return i;
 }
 
-char* cmdl_typestr(int type)
-{
-    return ((type == OPT_T_INTI || type == OPT_T_INTX) ? "d" : 
-           ((type == OPT_T_BOOL) ? "b" :
-           ((type == OPT_T_STR || type == OPT_T_STRCPY) ? "s" : "?")));
-} 
-
-int cmdl_try_default(opt_desc_t *opt, int i_arg) 
-{
-    void *pval = opt->pval;
-    if (!pval) {
-        return 0;
-    }
-    
-    switch(opt->type) 
-    {
-    case OPT_T_BOOL:
-        ((int *)pval)[i_arg] = !(opt->b_default);
-        return 1;
-    case OPT_T_INTI:
-    case OPT_T_INTX:
-        ((int *)pval)[i_arg] = 0;
-        return 1;
-    }
-    return 0;
-}
-
-int cmdl_str2val(opt_desc_t *opt, int i_arg, char *arg) 
-{
-    void *pval = opt->pval;
-    if (!pval) {
-        return 0;
-    }
-    
-    switch(opt->type) 
-    {
-    case OPT_T_BOOL:
-    case OPT_T_INTI:
-    case OPT_T_INTX:
-        ((int *)pval)[i_arg] = atoi(arg);
-        break;
-    case OPT_T_STR:
-        ((char **)pval)[i_arg] = arg;
-        break;
-    case OPT_T_STRCPY:
-        strcpy(((char **)pval)[i_arg], arg);
-        break;
-    default:
-        xerr("not support opt type (%d)\n", opt->type);
-        return -1;
-    }
-    return 0;
-}
-
-int cmdl_val2str(opt_desc_t *opt, int i_arg) 
-{
-    int r = 0;
-    char *str = 0;
-    void *pval = opt->pval;
-    if (!pval) {
-        printf("?");
-        return 0;
-    }
-    
-    switch(opt->type) 
-    {
-    case OPT_T_BOOL:
-    case OPT_T_INTI:
-        r = printf("%d", ((int *)pval)[i_arg] );
-        break;
-    case OPT_T_INTX:
-        r = printf("0x%08x", ((int *)pval)[i_arg] );
-        break;
-    case OPT_T_STR:
-    case OPT_T_STRCPY:
-        str = ((char **)pval)[i_arg] ;
-        r = printf("%s", str ? str : "?");
-        break;
-    default:
-        xerr("not support opt type (%d)\n", opt->type);
-        return -1;
-    }
-    return r;
-}
-
 int ref_name_2_idx(int nref, const opt_ref_t *refs, const char *name)
 {
     int i;
@@ -458,21 +324,173 @@ int enum_name_2_idx(int nenum, const opt_enum_t* enums, const char *name)
     return -1;
 }
 
-int cmdl_enum_usable(opt_desc_t *opt)
+cmdl_iter_t  cmdl_iter_init(int argc, char **argv, int start)
 {
-    if ((opt->type == OPT_T_INTX || opt->type == OPT_T_INTI) && 
-        (opt->narg <= 1 && opt->nenum > 0))
-    {
-        return 1;
+    cmdl_iter_t iter = { argv, argc, start };
+    return iter;
+}
+
+int     cmdl_iter_idx (cmdl_iter_t *iter)
+{
+    return iter->idx;
+}
+
+/** argv[ith] */
+char*   cmdl_get_ith(cmdl_iter_t *iter, int i)
+{
+    if (iter->argv && i >= 0 && i < iter->argc) {
+        return iter->argv[i];
     }
     return 0;
 }
 
-int cmdl_getdesc_byref (int optc, opt_desc_t optv[], const char *ref)
+char*   cmdl_iter_1st (cmdl_iter_t *iter)
+{
+    return cmdl_get_ith(iter, iter->idx = iter->start);
+}
+
+char*   cmdl_iter_next(cmdl_iter_t *iter)
+{
+    return cmdl_get_ith(iter, ++ iter->idx);
+}
+
+char*   cmdl_iter_last(cmdl_iter_t *iter)
+{
+    return cmdl_get_ith(iter, iter->idx = iter->argc - 1);
+}
+
+char*   cmdl_iter_prev(cmdl_iter_t *iter)
+{
+    return cmdl_get_ith(iter, -- iter->idx);
+}
+
+char*   cmdl_iter_curr(cmdl_iter_t *iter)
+{
+    return cmdl_get_ith(iter, iter->idx);
+}
+
+char*   cmdl_peek_next(cmdl_iter_t *iter)
+{
+    return cmdl_get_ith(iter, 1 + iter->idx);
+}
+
+char*   cmdl_peek_ith (cmdl_iter_t *iter, int ith)
+{
+    return cmdl_get_ith(iter, ith + iter->idx);
+}
+
+char*   cmdl_iter_pop(cmdl_iter_t *iter, int b_opt)
+{
+    char *s = cmdl_iter_curr(iter);
+    if (!s || (b_opt && s[0]!='-') || (!b_opt && s[0]=='-')) {
+        return -1;
+    }
+    cmdl_iter_next(iter);
+    return s;
+}
+
+int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+{
+    char *flag=0;
+    char *last=0;
+    char *arg = cmdl_iter_next(iter);
+    if (!arg) {
+        return -1;
+    }
+
+    int *i_range = dst;
+    i_range[0] = 0;
+    i_range[1] = INT_MAX;
+    
+    /* parse argv : `$base[~$last]` or `$base[+$count]` */
+    //i_range[0] = strtoul (arg, &flag, 10);
+    flag = get_uint32 (arg, &i_range[0]);
+    if (flag==0 || *flag == 0) {       /* no `~$last` or `+$count` */
+        return 2;
+    }
+
+    /* get `~$last` or `+$count` */
+    if (*flag != '~' && *flag != '+') {
+        xerr("<cmdl> Err : Invalid flag\n");
+        return -1;
+    }
+    
+    //i_range[1] = strtoul (flag + 1, &last, 10);
+    last = get_uint32 (flag + 1, &i_range[1]);
+    if (last == 0 || *last != 0 ) {
+        xerr("<cmdl> Err : Invalid count/end\n");
+        i_range[1] = INT_MAX;
+        return -1;
+    }
+    
+    if (*flag == '+') {
+        i_range[1] += i_range[0];
+    }
+    
+    return 2;
+}
+
+int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+{
+    char *arg = cmdl_iter_next(iter);
+    if (!arg) {
+        return -1;
+    }
+    *((char **)dst) = arg;
+    return 2;
+}
+
+int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+{
+    char *arg = cmdl_iter_next(iter);
+    if (!arg) {
+        return -1;
+    }
+    strcpy(*((char **)dst), arg);
+    return 2;
+}
+
+int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+{
+    char *arg = cmdl_iter_next(iter);
+    if (!arg) {
+        return -1;
+    }
+    int b_err = str_2_int(arg, dst);
+    return b_err ? -1 : 2;
+}
+
+int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+{
+    char *arg = cmdl_iter_next(iter);
+    
+    if (0==strcmp(arg, "-xnon")) {
+        xlevel(SLOG_NON);
+        return 1;
+    } 
+
+    if (0==strcmp(arg, "-xall")) {
+        xlevel(SLOG_ALL);
+        return 1;
+    } 
+
+    if (0==strcmp(arg, "-xl") || 0==strcmp(arg, "-xlevel")) {
+        int level;
+        int r = cmdl_parse_int(iter, &level, action, opt);
+        if (r>=0) {
+            xlevel(level);
+            return 2;
+        }
+    } 
+    
+    return -1;
+}
+
+int cmdl_getdesc_byref (int optc, cmdl_opt_t optv[], const char *ref)
 {
     int i, j;
     for (i=0; i<optc; ++i) {
-        opt_desc_t *opt = &optv[i];
+        cmdl_opt_t *opt = &optv[i];
         j = ref_name_2_idx(opt->nref, opt->refs, ref);
         if (j >= 0) {
             return i;
@@ -485,118 +503,103 @@ int cmdl_getdesc_byref (int optc, opt_desc_t optv[], const char *ref)
     return -1;
 }
 
-int cmdl_getdesc_byname(int optc, opt_desc_t optv[], const char *name)
+int cmdl_getdesc_byname(int optc, cmdl_opt_t optv[], const char *name)
 {
     int i;
     for (i=0; i<optc; ++i) {
-        if (0==strcmp(name, optv[i].name+1)) {
+        if (field_in_record(name, optv[i].names)) {
             return i;
         }
     }
     return -1;
 }
 
-int cmdl_set_ref(int optc, opt_desc_t optv[], 
+int cmdl_set_ref(int optc, cmdl_opt_t optv[], 
                 const char *name, int nref, const opt_ref_t *refs)
 {
     int i_opt = cmdl_getdesc_byname(optc, optv, name);
     if (i_opt >= 0) {
-        opt_desc_t *opt = &optv[i_opt];
+        cmdl_opt_t *opt = &optv[i_opt];
         opt->nref = nref;
         opt->refs = refs;
     }
     return i_opt;
 }
 
-int cmdl_set_enum(int optc, opt_desc_t optv[], 
+int cmdl_set_enum(int optc, cmdl_opt_t optv[], 
                 const char *name, int nenum, const opt_enum_t *enums)
 {
     int i_opt = cmdl_getdesc_byname(optc, optv, name);
     if (i_opt >= 0) {
-        opt_desc_t *opt = &optv[i_opt];
+        cmdl_opt_t *opt = &optv[i_opt];
         opt->nenum = nenum;
         opt->enums = enums;
     }
     return i_opt;
 }
 
-
-int cmdl_parse_opt(int i, int argc, char *argv[], opt_desc_t *opt)
+static
+int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t* opt)
 {
-    int j;
-    int    arg_count = argc - i;
-    char **arg_array = &argv[i];
-    char  *arg = 0;
+    xdbg("<cmdl> -%s :\n", opt->names);
     
-    xdbg("<cmdl> -%s : cmdl_parse_opt(%d, %d, %s...)\n", 
-            opt->name, i, argc, argv ? argv[i] : "?");
-    
-    if (argv == 0) {
-        opt->b_default = 1;
-        arg = opt->default_val;
-        arg_count = arg ? 1 : 0;
-        arg_array = &arg;
-        xlog_cmdl("use default_val `%s`\n", arg ? arg : "nil");
-    } else {
-        opt->b_default = 0;
-        arg = get_argv(argc, argv, i, opt->name);
-    }
-    
-    char *spl[256] = {0};
-    char splbuf[1024] = {0};
+    cmdl_iter_t *iter2 = iter;
+    int   fieldCount = 0;
+    char *fieldArr[256] = {cmdl_iter_curr(iter)};
+    char  fieldBuf[1024] = {0};
+
+    char *arg = cmdl_peek_next(iter);
     if (arg && arg[0] == '%') 
     {
+        cmdl_iter_next(iter);
+        
+        /* expand ref or enum */
         if (opt->nref > 0) {
             opt->i_ref = ref_name_2_idx(opt->nref, opt->refs, &arg[1]);
             if (opt->i_ref < 0) {
-                xerr("can't find -%s.%s as ref\n", opt->name, arg);
-                return -i;
+                xerr("can't find -%s.%s as ref\n", opt->names, arg);
+                return -1;
             }
             
-            strncpy(splbuf, opt->refs[opt->i_ref].val, 1024);
-            arg_count = str_2_fields(splbuf, 256, spl);
-            if (arg_count>=256) {
+            strncpy(fieldBuf, opt->refs[opt->i_ref].val, 1024);
+            fieldCount = str_2_fields(fieldBuf, 255, fieldArr+1);
+            if (fieldCount>=255) {
                 xerr("strspl() overflow\n");
-                return -i;
+                return -1;
             }
-            
-            arg_array = spl;
-        } else if ( cmdl_enum_usable( opt ) ) {
+
+            cmdl_iter_t _iter2 = cmdl_iter_init(fieldCount+1, fieldArr, 0);
+            iter2 = &_iter2;
+        } else if ( opt->nenum > 0 ) {
             opt->i_enum = enum_name_2_idx(opt->nenum, opt->enums, &arg[1]);
             if (opt->i_enum < 0) {
-                xerr("can't find -%s.%s as enum\n", opt->name, arg);
-                return -i;
+                xerr("can't find -%s.%s as enum\n", opt->names, arg);
+                return -1;
             }
-            *((int *)opt->pval) = opt->enums[opt->i_enum].val;
-            return i + !opt->b_default;
+            *((int *)dst) = opt->enums[opt->i_enum].val;
+            return 2;
         } else {
-            xerr("can't expand -%s.%s neither as ref nor enum\n", opt->name, arg);
-            return -i;
+            xerr("can't expand -%s.%s neither as ref nor enum\n", opt->names, arg);
+            return -1;
         }
     }
-    //TODO: bug here
-    int i_arg;
-    for (i_arg=0; i_arg<opt->narg; ++i_arg) {
-        arg = get_argv(arg_count, arg_array, i_arg, opt->name);
-        if (arg) {
-            cmdl_str2val(opt, i_arg, arg);
-        } else if ( !cmdl_try_default(opt, i_arg) ) {
-            xerr("%s no more args for %s\n", opt->i_ref >= 0 ? arg : "", opt->name);
-            return -(i + opt->b_default ? 0 : (opt->i_ref >= 0 ? 1 : i_arg));
-        }
+
+    int r = opt->parse(iter2, dst, CMDL_ACT_PARSE, opt);
+    if (r < 0) {
+        xerr("@cmdl>> -%s.parse() failed\n", opt->names);
+        return -1;
     }
     
-    int narg = opt->b_default ? 0 : (opt->i_ref >= 0 ? 1 : i_arg);
-    return i + narg;
+    return (arg && arg[0] == '%') ? 1 : r;
 }
 
-int cmdl_init(int optc, opt_desc_t optv[])
+int cmdl_init(int optc, cmdl_opt_t optv[])
 {
     int n_err = 0;
     int i;
     for (i=0; i<optc; ++i) 
     {
-        opt_desc_t *opt = &optv[i];
+        cmdl_opt_t *opt = &optv[i];
         opt->n_parse    = 0;
         opt->argvIdx    = -1;
         opt->b_default  = 0;
@@ -606,77 +609,88 @@ int cmdl_init(int optc, opt_desc_t optv[])
     
     for (i=0; i<optc; ++i) 
     {
-        opt_desc_t *opt = &optv[i];
-        if (!opt->name || (opt->name[0] != '*' && opt->name[0] != '+') ) {
-            xerr("invalide optiion name\n");
+        cmdl_opt_t *opt = &optv[i];
+        if (!opt->names || !opt->names[0] ) {
+            xerr("null optiion name\n");
+            -- n_err;
+        }
+        if (!opt->parse) {
+            xerr("-%s.parse() has no implementation\n", opt->names);
             -- n_err;
         }
         if (opt->narg < 1) {
-            xerr("-%s.narg = %d is not allowed\n", opt->name + 1, opt->narg);
+            xerr("-%s.narg = %d is not allowed\n", opt->names, opt->narg);
             -- n_err;
         }
     }
     return n_err;
 }
 
-int cmdl_parse(int i, int argc, char *argv[], int optc, opt_desc_t optv[])
+int cmdl_parse(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
 {
     ENTER_FUNC();
-    
-    if (i>=argc) {
-        return i;
+
+    int r = cmdl_init(optc, optv);
+    if (r < 0) {
+        xerr("invalid cmdl description defined (%d)\n\n", r);
+        return -1;
     }
-     
-    while (i>=0 && i<argc)
+
+    int old_idx = cmdl_iter_idx(iter);
+    
+    while (cmdl_iter_next(iter))
     {
-        char *arg = argv[i];
-        if (arg[0]=='-' && arg[1]=='%') 
-        {
-            int i_opt = cmdl_getdesc_byref(optc, optv, &arg[2]);
-            if (i_opt < 0) {
-                xlog_cmdl("argv[%d] (%s) unrecognized\n", i, arg);
-                return i;
-            }
-            ++ optv[i_opt].n_parse;
-            optv[i_opt].argvIdx = i;
-            arg=&argv[i][1];
-            int r = cmdl_parse_opt(0, 1, &arg, &optv[i_opt]);
-            if (r < 1) {
-                xerr("%d = cmdl_parse_opt(%d, %d, %s...)\n", 
-                        i, optv[i_opt].argvIdx+1, argc, argv[i]);
-                return - optv[i_opt].argvIdx;
-            }
-            ++ i;
-        } else 
-        if (arg[0]=='-') 
-        {
-            int i_opt = cmdl_getdesc_byname(optc, optv, &arg[1]);
-            if (i_opt < 0) {
-                xlog_cmdl("argv[%d] (%s) unrecognized\n", i, arg);
-                return i;
-            }
-            
-            ++ optv[i_opt].n_parse;
-            optv[i_opt].argvIdx = i;
-            i = cmdl_parse_opt(i, argc, argv, &optv[i_opt]);
-            if (i <= optv[i_opt].argvIdx) {
-                xerr("%d = cmdl_parse_opt(%d, %d, %s...)\n", 
-                        i, optv[i_opt].argvIdx+1, argc, argv[i]);
-                return - optv[i_opt].argvIdx;
-            }
-            ++ i;
-        } else {
-            xlog_cmdl("argv[%d] (%s) is not opt\n", i, arg);
-            return i;
+        char *arg = cmdl_iter_curr(iter);
+        if (arg[0]!='-') {
+            xlog_cmdl("argv[%d] (%s) is not opt\n", cmdl_iter_idx(iter), arg);
+            return -1;
         }
+
+        int i_opt = -1;
+        cmdl_iter_t *iter2 = iter;
+        char *ref_expand[2] = {0};
+        
+        if (arg[1]=='%') {                                          /* -%ref or -%enum */
+            i_opt = cmdl_getdesc_byref(optc, optv, &arg[2]);
+        } else {                                                      /* -opt arg ... */
+            i_opt = cmdl_getdesc_byname(optc, optv, &arg[1]); 
+        }
+        if (i_opt < 0) {
+            xlog_cmdl("argv[%d] (%s) unrecognized\n", cmdl_iter_idx(iter), arg);
+            break;
+        }
+
+        cmdl_opt_t *opt = &optv[i_opt];
+        ++ opt->n_parse;
+        opt->argvIdx = cmdl_iter_idx(iter);
+        cmdl_iter_next(iter);
+        
+        if (arg[1]=='%') {
+            ref_expand[0] = arg;        /* use original opt */
+            ref_expand[1] = arg + 1;    /* use `%ref' or `%enum' as arg */
+            cmdl_iter_t _iter2 = cmdl_iter_init(2, ref_expand, 0);
+            iter2 = &_iter2;
+        } 
+
+        r = cmdl_parse_opt(iter2, (char *)dst + opt->dst_offset, CMDL_ACT_PARSE, &optv[i_opt]);
+        if (r < 0) {
+            xerr("@cmdl>> argv[%d] (%s) parse error\n", cmdl_iter_idx(iter), arg);
+            return -1;
+        }
+    }
+
+    r = cmdl_check(optc, optv);
+    if (r < 0) {
+        xerr("cmdl_check() failed (%d)\n\n", r);
+        return -1;
     }
     
     LEAVE_FUNC();
     
-    return i;
+    return cmdl_iter_idx(iter) - old_idx;
 }
 
-int cmdl_help(int optc, opt_desc_t optv[])
+int cmdl_help(int optc, cmdl_opt_t optv[])
 {
     int i, j;
     
@@ -686,12 +700,9 @@ int cmdl_help(int optc, opt_desc_t optv[])
     
     for (i=0; i<optc; ++i) 
     {
-        opt_desc_t *opt = &optv[i];
-        printf("    -%s (%c), %%%s{%d}, help='%s', default='%s';\n", 
-                opt->name + 1, opt->name[0],
-                cmdl_typestr(opt->type), 
-                opt->narg, 
-                opt->help, 
+        cmdl_opt_t *opt = &optv[i];
+        printf("    -%s, {%d}, help='%s', default='%s';\n", 
+                opt->names, opt->narg, opt->help, 
                 opt->default_val ? opt->default_val : "" );
 
         for (j=0; j<opt->nref; ++j ) {
@@ -711,7 +722,7 @@ int cmdl_help(int optc, opt_desc_t optv[])
     return 0;
 }
 
-int cmdl_check(int optc, opt_desc_t optv[])
+int cmdl_check(int optc, cmdl_opt_t optv[])
 {
     int n_err = 0;
     int i_opt, i_arg;
@@ -720,19 +731,19 @@ int cmdl_check(int optc, opt_desc_t optv[])
     
     for (i_opt=0; i_opt<optc; ++i_opt) 
     {
-        opt_desc_t *opt = &optv[i_opt];
+        cmdl_opt_t *opt = &optv[i_opt];
         if (opt->n_parse > 0) {
             continue;
         }
-        xdbg("<cmdl> -%-10s has never been set\n", &opt->name[1]);
-        if (opt->name[0] == '+') {
-            xerr("%s not specified\n", &opt->name[1]);
+        xdbg("<cmdl> -%-10s has never been set\n", opt->names);
+        if (opt->b_required) {
+            xerr("%s not specified\n", opt->names);
             -- n_err;
         } else {
-            xlog_cmdl("try default_val for -%s\n", &opt->name[1]);
+            xlog_cmdl("try default_val for -%s\n", opt->names);
             int r = cmdl_parse_opt(0, 0, 0, opt);
             if (r < 0) {
-                xerr("%s fail to use default_val\n", &opt->name[1]);
+                xerr("%s fail to use default_val\n", opt->names);
                 -- n_err;
             } 
         }
@@ -743,7 +754,7 @@ int cmdl_check(int optc, opt_desc_t optv[])
     return n_err;
 }
 
-int cmdl_result(int optc, opt_desc_t optv[])
+int cmdl_result(int optc, cmdl_opt_t optv[])
 {
     int i_opt, i_arg;
     
@@ -752,11 +763,11 @@ int cmdl_result(int optc, opt_desc_t optv[])
     printf("result = {\n");
     for (i_opt=0; i_opt<optc; ++i_opt) 
     {
-        opt_desc_t *opt = &optv[i_opt];
-        printf("\t-%s (%c%d) = `", opt->name+1, opt->name[0], opt->n_parse);
+        cmdl_opt_t *opt = &optv[i_opt];
+        printf("\t-%s (%d) = `", opt->names, opt->n_parse);
         int narg = MAX(opt->narg, 1);
         for (i_arg=0; i_arg<narg; ++i_arg) {
-            cmdl_val2str(opt, i_arg);
+            // cmdl_val2str(opt, i_arg);
             printf("%c", (i_arg==narg-1) ? '\'' : ' ');
         }
         
