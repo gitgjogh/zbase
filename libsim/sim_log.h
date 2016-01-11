@@ -48,6 +48,7 @@ typedef struct simple_level_log
 {
     int         b_inited;
     void       *fp[SLOG_ALL+1];
+    int         level;
 } slog_t;
 
 int slog_set_range(slog_t *sl, int minL, int maxL, void *fp);
@@ -59,10 +60,12 @@ int slog (slog_t *sl, int level, const char *prompt, const char *fmt, ...);
 int xlog_set_range(int minL, int maxL, void *fp);
 int xlog_init(int level);
 void xlog_reset();
-int xlevel(int level);
+int xlog_set_level(int level);
+int xlog_get_level();
 int xlogv(int level, const char *prompt, const char *fmt, va_list ap);
 int xlog (int level, const char *prompt, const char *fmt, ...);
 
+#define xlevel                  xlog_set_level
 #define xerr(...)               xlog(SLOG_ERR, "err", __VA_ARGS__)
 #define xwarn(...)              xlog(SLOG_WARN, "warn", __VA_ARGS__)
 #define xdbg(...)               xlog(SLOG_DBG, "dbg", __VA_ARGS__)

@@ -53,6 +53,7 @@ int slog_init(slog_t *sl, int level)
     sl->b_inited = 1;
     if (level != SLOG_NON) { 
         sl->fp[SLOG_NON] = sl->fp[SLOG_ERR] = stderr;
+        sl->level = level;
         return slog_set_range(sl, SLOG_ERR+1, level, stdout);
     }
     return 0;
@@ -78,9 +79,14 @@ void xlog_reset()
     slog_reset(&g_slog_obj);
 }
 
-int xlevel(int level)
+int xlog_set_level(int level)
 {
     return slog_init(&g_slog_obj, level);
+}
+
+int xlog_get_level()
+{
+    return g_slog_obj.level;
 }
 
 int slogv(slog_t *sl, int level, const char *prompt, const char *fmt, va_list ap)
