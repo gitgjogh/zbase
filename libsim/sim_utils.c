@@ -237,11 +237,16 @@ int str_2_fields(char *record, int arrSz, char *fieldArr[])
 {
     int nkey=0;
     char *substr = 0;
+    int   sublen = 0;
     str_iter_t iter = str_iter_init(record, 0);
     WHILE_GET_FIELD(iter, " ,", " ,", substr) {
+        if (nkey>0) {
+            fieldArr[nkey-1][sublen] = 0;       /* terminate last substr */
+        }
         fieldArr[nkey++] = substr;
-        substr[STR_ITER_GET_SUBLEN(iter)] = 0;
+        sublen = STR_ITER_GET_SUBLEN(iter);
     }
+    fieldArr[nkey-1][sublen] = 0;               /* terminate last substr */
     return nkey;
 }
 
