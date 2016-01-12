@@ -296,22 +296,14 @@ char *str_iter_next_field(str_iter_t *iter,
 
 const char *field_in_record(const char *field, const char *record)
 {
-    const char *curr=0, *next=0;
     int flen = strlen(field);
-    
-    for(curr=record; curr!=0; curr=next)
-    {
-        next = strstr(curr, field);
-        if (next) 
-        {
-            char s = (next==record ? 0 : next[-1]);
-            char e = next[flen+1];
-            if ((s==0 || s==',' || s==' ') && 
-                (e==0 || e==',' || e==' ')) 
-            {
-                return next;
-            }
-        }   
+    char *substr = 0;
+    str_iter_t iter = str_iter_init(record, 0);
+    WHILE_GET_FIELD(iter, " ,", " ,", substr) {
+        if (flen == STR_ITER_GET_SUBLEN(iter) && 
+            0 == strncmp(field, substr, flen)) {
+            return substr;
+        }
     }
     
     return 0;
