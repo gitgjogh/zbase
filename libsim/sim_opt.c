@@ -497,8 +497,14 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     if (act == CMDL_ACT_PARSE)
     {
         char *arg = cmdl_iter_next(iter);
-        if (!arg) {
-            return CMDL_RET_ERROR;
+        if (!arg || arg[0]=='-') {
+            if (opt->narg==0) {
+                arg = SAFE_STR(opt->default_val, "1");
+            } else {
+                return CMDL_RET_ERROR;
+            }
+        } else {
+            cmdl_iter_next(iter);
         }
         int b_err = str_2_int(arg, dst);
         return b_err ? CMDL_RET_ERROR : 2;
@@ -529,7 +535,7 @@ int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     else if (act == CMDL_ACT_RESULT)
     {
         for (i=0; i<opt->narg; ++i) {
-            xprint("%s'%d'", i?"":",", *((int*)dst));
+            xprint("%s'%d'", i?"":",", ((int*)dst)[i]);
         }
     }
 
@@ -915,8 +921,8 @@ int cmdl_result(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
         xlprint(iter->layer, "-%s = ", opt->names);
         opt->parse(iter, (char *)dst + opt->dst_offset, CMDL_ACT_RESULT, opt);
 
-        //FIXME: since optv has not bind to dst, the following 
-        //       way to get ref.name or enum.name make no sense. 
+        //Caution: Define the optv[] in global scope. Or else the following
+        //          way to get ref.name or enum.name would make no sense. 
         if (opt->i_ref >= 0 && opt->i_ref < opt->nref) {
             xprint(" (%%%s)", opt->refs[opt->i_ref].name);
         }
