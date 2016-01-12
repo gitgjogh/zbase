@@ -134,3 +134,17 @@ int xlog (int level, const char *prompt, const char *fmt, ...)
     va_end(ap);
     return r;
 }
+
+int xlprint (int layer, const char *fmt, ...)
+{
+    int r = 0;
+    for (r=0; r<layer; ++r) {
+        xprint("    ");
+    }
+
+    va_list ap;
+    va_start(ap, fmt);
+    r = xlogv(SLOG_PRINT, 0, fmt, ap);
+    va_end(ap);
+    return r;
+}
