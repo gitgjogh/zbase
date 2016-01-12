@@ -102,6 +102,7 @@ char*   cmdl_peek_next(cmdl_iter_t *iter);              /** argv[1 + iter->idx] 
 char*   cmdl_peek_ith (cmdl_iter_t *iter, int ith);     /** argv[ith + iter->idx] */
 char*   cmdl_iter_pop (cmdl_iter_t *iter, int b_opt);
 void    cmdl_layer_prefix(int layer);
+void    cmdl_iter_dbg (cmdl_iter_t *iter);
 
 typedef enum {
     CMDL_ACT_PARSE = 0,
@@ -136,6 +137,7 @@ int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
 int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
 int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
 int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
 int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
 

@@ -511,6 +511,31 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     return 0;
 }
 
+int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
+{
+    int i = 0;
+    if (act == CMDL_ACT_PARSE)
+    {
+        for (i=0; i<opt->narg; ++i) {
+            char *arg = cmdl_iter_next(iter);
+            if (!arg || /*b_err=*/str_2_int(arg, &((int*)dst)[i])) {
+                xerr(arg ? "str2i() failed\n" : "noarg\n");
+                cmdl_iter_dbg (iter);
+                return CMDL_RET_ERROR;
+            }
+        }
+        return opt->narg + 1;
+    }
+    else if (act == CMDL_ACT_RESULT)
+    {
+        for (i=0; i<opt->narg; ++i) {
+            xprint("%s'%d'", i?"":",", *((int*)dst));
+        }
+    }
+
+    return 0;
+}
+
 int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
 {
     if (act == CMDL_ACT_PARSE)
@@ -827,6 +852,14 @@ void cmdl_layer_prefix(int layer)
     int i;
     for (i=0; i<layer; ++i) {
         xprint("    ");
+    }
+}
+
+void cmdl_iter_dbg (cmdl_iter_t *_iter)
+{
+    cmdl_iter_t iter = *_iter;
+    for (cmdl_iter_1st(&iter); cmdl_iter_curr(&iter); cmdl_iter_next(&iter)) {
+        xdbg("%s\n", cmdl_iter_curr(&iter));
     }
 }
 
