@@ -87,6 +87,8 @@ typedef struct cmdl_iter {
     int     argc;
     int     start;
     int     idx;
+
+    int     layer;
 } cmdl_iter_t;
 
 cmdl_iter_t  cmdl_iter_init(int argc, char **argv, int start);
@@ -99,12 +101,24 @@ char*   cmdl_iter_curr(cmdl_iter_t *iter);              /** argv[iter->idx] */
 char*   cmdl_peek_next(cmdl_iter_t *iter);              /** argv[1 + iter->idx] */
 char*   cmdl_peek_ith (cmdl_iter_t *iter, int ith);     /** argv[ith + iter->idx] */
 char*   cmdl_iter_pop (cmdl_iter_t *iter, int b_opt);
+void    cmdl_layer_prefix(int layer);
 
 typedef enum {
     CMDL_ACT_PARSE = 0,
-    CMDL_ACT_HLEP,
+    CMDL_ACT_HELP,
+    CMDL_ACT_RESULT,
 }
 cmdl_act_t;
+
+typedef enum {
+    CMDL_RET_ERROR_CHECK = -12,
+    CMDL_RET_ERROR_INIT = -11,
+    CMDL_RET_ERROR = -10,       /* retcode <= CMDL_RET_ERROR should be error */
+    CMDL_RET_HELP  = -3,
+    CMDL_RET_NOT_OPT = -2,      /* end with non-option, maybe not error */
+    CMDL_RET_UNKNOWN = -1,      /* end with unkown option, maybe not error */
+}
+cmdl_ret_t;
 
 typedef struct cmdl_option_description cmdl_opt_t;
 /**
@@ -117,13 +131,13 @@ typedef struct cmdl_option_description cmdl_opt_t;
  * @param param extra param help for arg parsing
  * @return number (>=0) of args being parsed, (-1) means error
  */
-typedef int (*cmdl_parse_func_t)(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
-int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
-int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
-int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
-int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
-int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
-int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt);
+typedef int (*cmdl_parse_func_t)(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
 
 
 typedef struct cmdl_option_description {
@@ -157,11 +171,9 @@ int cmdl_set_enum(int optc, cmdl_opt_t optv[],
 
 int cmdl_getdesc_byref (int optc, cmdl_opt_t optv[], const char *name);
 int cmdl_getdesc_byname(int optc, cmdl_opt_t optv[], const char *name);
-int cmdl_init(int optc, cmdl_opt_t optv[]);
 int cmdl_parse(cmdl_iter_t *iter, void *dst, int optc, cmdl_opt_t optv[]);
-int cmdl_help(int optc, cmdl_opt_t optv[]);
-int cmdl_check(int optc, cmdl_opt_t optv[]);
-int cmdl_result(int optc, cmdl_opt_t optv[]);
+int cmdl_help(cmdl_iter_t *iter, void* null, int optc, cmdl_opt_t optv[]);
+int cmdl_result(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[]);
 
 
 #ifdef __cplusplus

@@ -22,6 +22,9 @@
 
 #include "sim_opt.h"
 
+static int cmdl_init(int optc, cmdl_opt_t optv[]);
+static int cmdl_check(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[]);
+
 
 void iof_cfg(ios_t *f, const char *path, const char *mode)
 {
@@ -67,10 +70,10 @@ int ios_open(ios_t ios[], int nch, int *nop)
                 if (fp) {
                     char yes_or_no = 0;
                     fclose(fp); fp =0;
-                    printf("file `%s` already exist, overwrite? (y/n) : ", f->path);
+                    xprint("file `%s` already exist, overwrite? (y/n) : ", f->path);
                     int r = scanf("%c", &yes_or_no);
                     if (r!=1 || yes_or_no != 'y') {
-                        printf("file `%s` would be skipped\n", f->path);
+                        xprint("file `%s` would be skipped\n", f->path);
                         continue;
                     }
                 }
@@ -383,107 +386,181 @@ char*   cmdl_iter_pop(cmdl_iter_t *iter, int b_opt)
 {
     char *s = cmdl_iter_curr(iter);
     if (!s || (b_opt && s[0]!='-') || (!b_opt && s[0]=='-')) {
-        return -1;
+        return 0;
     }
     cmdl_iter_next(iter);
     return s;
 }
 
-int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+cmdl_iter_t  cmdl_layer_init(int layer)
 {
-    char *flag=0;
-    char *last=0;
-    char *arg = cmdl_iter_next(iter);
-    if (!arg) {
-        return -1;
-    }
+    cmdl_iter_t iter = { layer };
+    return iter;
+}
 
-    int *i_range = dst;
-    i_range[0] = 0;
-    i_range[1] = INT_MAX;
-    
-    /* parse argv : `$base[~$last]` or `$base[+$count]` */
-    //i_range[0] = strtoul (arg, &flag, 10);
-    flag = get_uint32 (arg, &i_range[0]);
-    if (flag==0 || *flag == 0) {       /* no `~$last` or `+$count` */
+int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
+{
+    if (act == CMDL_ACT_PARSE)
+    {
+        char *flag=0;
+        char *last=0;
+        char *arg = cmdl_iter_next(iter);
+        if (!arg) {
+            return -1;
+        }
+
+        int *i_range = dst;
+        i_range[0] = 0;
+        i_range[1] = INT_MAX;
+
+        if (arg[0] != '~' &&  arg[1] != '+') {
+            /* parse argv : `$start[~$last]` or `$start[+$count]` */
+            flag = get_uint32 (arg, &i_range[0]);
+            if (flag==0 || *flag == 0) {       /* no `~$last` or `+$count` */
+                return 2;
+            }
+        }
+
+        /* get `~$last` or `+$count` */
+        if (*flag != '~' && *flag != '+') {
+            xerr("<cmdl> Err : Invalid flag\n");
+            return CMDL_RET_ERROR;
+        }
+        
+        last = get_uint32 (flag + 1, &i_range[1]);
+        if (last == 0 || *last != 0 ) {
+            xerr("<cmdl> Err : Invalid count/end\n");
+            i_range[1] = INT_MAX;
+            return -1;
+        }
+        
+        if (*flag == '+') {
+            i_range[1] += i_range[0];
+        }
+        
         return 2;
     }
+    else if (act == CMDL_ACT_RESULT)
+    {
+        int *range = (int *)dst;
+        xprint("'%d~%d';\n", range[0], range[1]);
+    }
+    else if (act == CMDL_ACT_HELP)
+    {
+        xlprint(iter->layer+1, "`$start[~$last]`  or `[$start]~$last`\n");
+        xlprint(iter->layer+1, "`$start[+$count]` or `[$start]+$count`\n");
+    }
 
-    /* get `~$last` or `+$count` */
-    if (*flag != '~' && *flag != '+') {
-        xerr("<cmdl> Err : Invalid flag\n");
-        return -1;
-    }
-    
-    //i_range[1] = strtoul (flag + 1, &last, 10);
-    last = get_uint32 (flag + 1, &i_range[1]);
-    if (last == 0 || *last != 0 ) {
-        xerr("<cmdl> Err : Invalid count/end\n");
-        i_range[1] = INT_MAX;
-        return -1;
-    }
-    
-    if (*flag == '+') {
-        i_range[1] += i_range[0];
-    }
-    
-    return 2;
+    return 0;
 }
 
-int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
+int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
 {
-    char *arg = cmdl_iter_next(iter);
-    if (!arg) {
-        return -1;
-    }
-    *((char **)dst) = arg;
-    return 2;
-}
-
-int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
-{
-    char *arg = cmdl_iter_next(iter);
-    if (!arg) {
-        return -1;
-    }
-    strcpy(*((char **)dst), arg);
-    return 2;
-}
-
-int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
-{
-    char *arg = cmdl_iter_next(iter);
-    if (!arg) {
-        return -1;
-    }
-    int b_err = str_2_int(arg, dst);
-    return b_err ? -1 : 2;
-}
-
-int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t *opt)
-{
-    char *arg = cmdl_iter_next(iter);
-    
-    if (0==strcmp(arg, "-xnon")) {
-        xlevel(SLOG_NON);
-        return 1;
-    } 
-
-    if (0==strcmp(arg, "-xall")) {
-        xlevel(SLOG_ALL);
-        return 1;
-    } 
-
-    if (0==strcmp(arg, "-xl") || 0==strcmp(arg, "-xlevel")) {
-        int level;
-        int r = cmdl_parse_int(iter, &level, action, opt);
-        if (r>=0) {
-            xlevel(level);
-            return 2;
+    if (act == CMDL_ACT_PARSE)
+    {
+        char *arg = cmdl_iter_next(iter);
+        if (!arg) {
+            return CMDL_RET_ERROR;
         }
-    } 
+        *((char **)dst) = arg;
+        return 2;
+    }
+    else if (act == CMDL_ACT_RESULT)
+    {
+        xprint("'%s", *((char **)dst));
+    }
+
+    return 0;
+}
+
+int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
+{
+    if (act == CMDL_ACT_PARSE)
+    {
+        char *arg = cmdl_iter_next(iter);
+        if (!arg) {
+            return CMDL_RET_ERROR;
+        }
+        strcpy(*((char **)dst), arg);
+        return 2;
+    }
+    else if (act == CMDL_ACT_RESULT)
+    {
+        xprint("'%s'", *((char **)dst));
+    }
+
+    return 0;
+}
+
+int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
+{
+    if (act == CMDL_ACT_PARSE)
+    {
+        char *arg = cmdl_iter_next(iter);
+        if (!arg) {
+            return CMDL_RET_ERROR;
+        }
+        int b_err = str_2_int(arg, dst);
+        return b_err ? CMDL_RET_ERROR : 2;
+    }
+    else if (act == CMDL_ACT_RESULT)
+    {
+        xprint("'%d'", *((int*)dst));
+    }
+
+    return 0;
+}
+
+int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
+{
+    if (act == CMDL_ACT_PARSE)
+    {
+        char *arg = cmdl_iter_next(iter);
+        
+        if (0==strcmp(arg, "-xnon")) {
+            xlog_set_level(SLOG_NON);
+            return 1;
+        } 
+
+        if (0==strcmp(arg, "-xall")) {
+            xlog_set_level(SLOG_ALL);
+            return 1;
+        } 
+
+        if (0==strcmp(arg, "-xl") || 0==strcmp(arg, "-xlevel")) {
+            int level;
+            int r = cmdl_parse_int(iter, &level, act, opt);
+            if (r>=0) {
+                xlog_set_level(level);
+                return 2;
+            }
+        }
+        
+        return CMDL_RET_ERROR;
+    }
+    else if (act == CMDL_ACT_RESULT)
+    {
+        xprint("'%d'", xlog_get_level());
+    }
+    else if (act == CMDL_ACT_HELP)
+    {
+        xlprint(iter->layer+1, "-xall,            log all\n");
+        xlprint(iter->layer+1, "-xnon,            log non\n");
+        xlprint(iter->layer+1, "-xl,xlevel <%%d>, set log level\n");
+    }
     
-    return -1;
+    return 0;
+}
+
+int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt)
+{
+    if (act == CMDL_ACT_PARSE)
+    {
+        cmdl_iter_next(iter);
+        return CMDL_RET_HELP;
+    }
+
+    return 0;
 }
 
 int cmdl_getdesc_byref (int optc, cmdl_opt_t optv[], const char *ref)
@@ -500,6 +577,7 @@ int cmdl_getdesc_byref (int optc, cmdl_opt_t optv[], const char *ref)
             return i;
         }
     }
+    
     return -1;
 }
 
@@ -507,6 +585,7 @@ int cmdl_getdesc_byname(int optc, cmdl_opt_t optv[], const char *name)
 {
     int i;
     for (i=0; i<optc; ++i) {
+        //xdbg("%d: %s, %s\n", i, name, optv[i].names);
         if (field_in_record(name, optv[i].names)) {
             return i;
         }
@@ -539,62 +618,65 @@ int cmdl_set_enum(int optc, cmdl_opt_t optv[],
 }
 
 static
-int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, cmdl_act_t action, cmdl_opt_t* opt)
+int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t* opt)
 {
-    xdbg("<cmdl> -%s :\n", opt->names);
-    
+    cmdl_iter_t _iter2;
     cmdl_iter_t *iter2 = iter;
     int   fieldCount = 0;
     char *fieldArr[256] = {cmdl_iter_curr(iter)};
     char  fieldBuf[1024] = {0};
 
     char *arg = cmdl_peek_next(iter);
+    xlog_cmdl("[L%d] parse_opt(-%s) : %s\n", iter->layer, opt->names, SAFE_STR(arg, "?"));
+    
     if (arg && arg[0] == '%') 
     {
-        cmdl_iter_next(iter);
-        
         /* expand ref or enum */
         if (opt->nref > 0) {
             opt->i_ref = ref_name_2_idx(opt->nref, opt->refs, &arg[1]);
             if (opt->i_ref < 0) {
                 xerr("can't find -%s.%s as ref\n", opt->names, arg);
-                return -1;
+                return CMDL_RET_ERROR;
             }
             
             strncpy(fieldBuf, opt->refs[opt->i_ref].val, 1024);
             fieldCount = str_2_fields(fieldBuf, 255, fieldArr+1);
             if (fieldCount>=255) {
                 xerr("strspl() overflow\n");
-                return -1;
+                return CMDL_RET_ERROR;
             }
 
-            cmdl_iter_t _iter2 = cmdl_iter_init(fieldCount+1, fieldArr, 0);
+            _iter2 = cmdl_iter_init(fieldCount+1, fieldArr, 0);
             iter2 = &_iter2;
+            iter2->layer = iter->layer;
         } else if ( opt->nenum > 0 ) {
             opt->i_enum = enum_name_2_idx(opt->nenum, opt->enums, &arg[1]);
             if (opt->i_enum < 0) {
                 xerr("can't find -%s.%s as enum\n", opt->names, arg);
-                return -1;
+                return CMDL_RET_ERROR;
             }
             *((int *)dst) = opt->enums[opt->i_enum].val;
             return 2;
         } else {
             xerr("can't expand -%s.%s neither as ref nor enum\n", opt->names, arg);
-            return -1;
+            return CMDL_RET_ERROR;
         }
     }
 
+    xlog_cmdl("[L%d] parse(-%s) : %s\n", iter2->layer, opt->names, SAFE_STR(arg, "?"));
     int r = opt->parse(iter2, dst, CMDL_ACT_PARSE, opt);
     if (r < 0) {
-        xerr("@cmdl>> -%s.parse() failed\n", opt->names);
-        return -1;
+        return r;
     }
     
     return (arg && arg[0] == '%') ? 1 : r;
 }
 
+static
 int cmdl_init(int optc, cmdl_opt_t optv[])
 {
+    ENTER_FUNC();
+    
     int n_err = 0;
     int i;
     for (i=0; i<optc; ++i) 
@@ -618,11 +700,10 @@ int cmdl_init(int optc, cmdl_opt_t optv[])
             xerr("-%s.parse() has no implementation\n", opt->names);
             -- n_err;
         }
-        if (opt->narg < 1) {
-            xerr("-%s.narg = %d is not allowed\n", opt->names, opt->narg);
-            -- n_err;
-        }
     }
+
+    LEAVE_FUNC();
+    
     return n_err;
 }
 
@@ -630,105 +711,87 @@ int cmdl_parse(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
 {
     ENTER_FUNC();
 
-    int r = cmdl_init(optc, optv);
-    if (r < 0) {
-        xerr("invalid cmdl description defined (%d)\n\n", r);
-        return -1;
+    int ret = cmdl_init(optc, optv);
+    if (ret < 0) {
+        xerr("invalid cmdl description defined (%d)\n\n", ret);
+        return CMDL_RET_ERROR_INIT;
     }
 
     int old_idx = cmdl_iter_idx(iter);
-    
+
+    ++ iter->layer;
     while (cmdl_iter_next(iter))
     {
         char *arg = cmdl_iter_curr(iter);
+        xlog_cmdl("[L%d] argv[%d]=(%s): \n", iter->layer, cmdl_iter_idx(iter), arg);
+        
         if (arg[0]!='-') {
             xlog_cmdl("argv[%d] (%s) is not opt\n", cmdl_iter_idx(iter), arg);
-            return -1;
+            cmdl_iter_prev(iter);
+            ret = CMDL_RET_NOT_OPT;
+            break;
         }
-
+        
         int i_opt = -1;
         cmdl_iter_t *iter2 = iter;
         char *ref_expand[2] = {0};
+        cmdl_iter_t _iter2 = cmdl_iter_init(2, ref_expand, 0);
         
         if (arg[1]=='%') {                                          /* -%ref or -%enum */
             i_opt = cmdl_getdesc_byref(optc, optv, &arg[2]);
-        } else {                                                      /* -opt arg ... */
+        } else {                                                    /* -opt arg ... */
             i_opt = cmdl_getdesc_byname(optc, optv, &arg[1]); 
         }
         if (i_opt < 0) {
             xlog_cmdl("argv[%d] (%s) unrecognized\n", cmdl_iter_idx(iter), arg);
+            cmdl_iter_prev(iter);
+            ret = CMDL_RET_UNKNOWN;
             break;
         }
 
         cmdl_opt_t *opt = &optv[i_opt];
         ++ opt->n_parse;
         opt->argvIdx = cmdl_iter_idx(iter);
-        cmdl_iter_next(iter);
         
         if (arg[1]=='%') {
             ref_expand[0] = arg;        /* use original opt */
             ref_expand[1] = arg + 1;    /* use `%ref' or `%enum' as arg */
-            cmdl_iter_t _iter2 = cmdl_iter_init(2, ref_expand, 0);
             iter2 = &_iter2;
+            iter2->layer = iter->layer;
         } 
 
-        r = cmdl_parse_opt(iter2, (char *)dst + opt->dst_offset, CMDL_ACT_PARSE, &optv[i_opt]);
-        if (r < 0) {
-            xerr("@cmdl>> argv[%d] (%s) parse error\n", cmdl_iter_idx(iter), arg);
-            return -1;
+        ret = cmdl_parse_opt(iter2, (char *)dst + opt->dst_offset, CMDL_ACT_PARSE, &optv[i_opt]);
+        if (ret <= CMDL_RET_HELP) {
+            break;
         }
     }
+    -- iter->layer;
 
-    r = cmdl_check(optc, optv);
-    if (r < 0) {
-        xerr("cmdl_check() failed (%d)\n\n", r);
-        return -1;
+    if (ret > CMDL_RET_HELP) {
+        ret = cmdl_check(iter, dst, optc, optv);
+        if (ret < 0) {
+            xerr("cmdl_check() failed (%d)\n\n", ret);
+            return CMDL_RET_ERROR_CHECK;
+        }
     }
-    
+   
     LEAVE_FUNC();
     
-    return cmdl_iter_idx(iter) - old_idx;
+    return (ret<=0)? ret : cmdl_iter_idx(iter) - old_idx;
 }
 
-int cmdl_help(int optc, cmdl_opt_t optv[])
-{
-    int i, j;
-    
-    ENTER_FUNC();
-    
-    printf("help = {\n");
-    
-    for (i=0; i<optc; ++i) 
-    {
-        cmdl_opt_t *opt = &optv[i];
-        printf("    -%s, {%d}, help='%s', default='%s';\n", 
-                opt->names, opt->narg, opt->help, 
-                opt->default_val ? opt->default_val : "" );
-
-        for (j=0; j<opt->nref; ++j ) {
-            const opt_ref_t *r = &opt->refs[j];
-            printf("\t %%%-10s \t `%s`\n", r->name, r->val);
-        }
-        for (j=0; j<opt->nenum; ++j ) {
-            const opt_enum_t *e = &opt->enums[j];
-            printf("\t %%%-10s \t %d\n", e->name, e->val);
-        }
-    }
-    
-    printf("};\n");
-    
-    LEAVE_FUNC();
-    
-    return 0;
-}
-
-int cmdl_check(int optc, cmdl_opt_t optv[])
+/**
+ * @param iter just for layer trace
+ */
+static
+int cmdl_check(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
 {
     int n_err = 0;
     int i_opt, i_arg;
+    char *argv[2] = {0};
     
     ENTER_FUNC();
-    
+
     for (i_opt=0; i_opt<optc; ++i_opt) 
     {
         cmdl_opt_t *opt = &optv[i_opt];
@@ -739,9 +802,13 @@ int cmdl_check(int optc, cmdl_opt_t optv[])
         if (opt->b_required) {
             xerr("%s not specified\n", opt->names);
             -- n_err;
-        } else {
+        } else if (opt->default_val) {
             xlog_cmdl("try default_val for -%s\n", opt->names);
-            int r = cmdl_parse_opt(0, 0, 0, opt);
+            argv[0] = opt->names;
+            argv[1] = opt->default_val;
+            cmdl_iter_t iter2 = cmdl_iter_init(2, argv, 0);
+            iter2.layer = 1 + iter->layer;
+            int r = cmdl_parse_opt(&iter2, (char *)dst + opt->dst_offset, CMDL_ACT_PARSE, opt);
             if (r < 0) {
                 xerr("%s fail to use default_val\n", opt->names);
                 -- n_err;
@@ -754,35 +821,79 @@ int cmdl_check(int optc, cmdl_opt_t optv[])
     return n_err;
 }
 
-int cmdl_result(int optc, cmdl_opt_t optv[])
+
+void cmdl_layer_prefix(int layer)
+{
+    int i;
+    for (i=0; i<layer; ++i) {
+        xprint("    ");
+    }
+}
+
+/**
+ * @param iter just for layer trace
+ */
+int cmdl_help(cmdl_iter_t *iter, void* null, int optc, cmdl_opt_t optv[])
+{
+    int i, j;
+    
+    ENTER_FUNC();
+
+    ++ iter->layer;
+    for (i=0; i<optc; ++i) 
+    {
+        cmdl_opt_t *opt = &optv[i];
+        xlprint(iter->layer, "-%s, {%d}, help='%s', default='%s';\n", 
+                opt->names, opt->narg, opt->help, 
+                SAFE_STR(opt->default_val, "") );
+
+        opt->parse(iter, 0, CMDL_ACT_HELP, opt);
+
+        for (j=0; j<opt->nref; ++j ) {
+            const opt_ref_t *r = &opt->refs[j];
+            xlprint(iter->layer+1, "%%%-10s \t `%s`\n", r->name, r->val);
+        }
+        for (j=0; j<opt->nenum; ++j ) {
+            const opt_enum_t *e = &opt->enums[j];
+            xlprint(iter->layer+1, "%%%-10s \t %d\n", e->name, e->val);
+        }
+    }
+    -- iter->layer;
+    
+    LEAVE_FUNC();
+    
+    return 0;
+}
+
+/**
+ * @param iter just for layer trace
+ */
+int cmdl_result(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
 {
     int i_opt, i_arg;
     
     ENTER_FUNC();
-    
-    printf("result = {\n");
+
+    xprint("\n");
+    ++ iter->layer;
     for (i_opt=0; i_opt<optc; ++i_opt) 
     {
         cmdl_opt_t *opt = &optv[i_opt];
-        printf("\t-%s (%d) = `", opt->names, opt->n_parse);
-        int narg = MAX(opt->narg, 1);
-        for (i_arg=0; i_arg<narg; ++i_arg) {
-            // cmdl_val2str(opt, i_arg);
-            printf("%c", (i_arg==narg-1) ? '\'' : ' ');
-        }
-        
-        //printf("\t ref[#%d]=", opt->i_ref);
+        xlprint(iter->layer, "-%s = ", opt->names);
+        opt->parse(iter, (char *)dst + opt->dst_offset, CMDL_ACT_RESULT, opt);
+
+        //FIXME: since optv has not bind to dst, the following 
+        //       way to get ref.name or enum.name make no sense. 
         if (opt->i_ref >= 0 && opt->i_ref < opt->nref) {
-            printf(" (&%s)", opt->refs[opt->i_ref].name);
+            xprint(" (%%%s)", opt->refs[opt->i_ref].name);
         }
         
-        //printf("enum[#%d]=", opt->i_enum);
         if (opt->i_enum >= 0 && opt->i_enum < opt->nenum) {
-            printf(" (&%s)", opt->enums[opt->i_enum].name);
+            xprint(" (%%%s)", opt->enums[opt->i_enum].name);
         }
-        printf("; \n");
+        xprint("\n");
     }
-    printf("}; \n");
+    -- iter->layer;
     
     LEAVE_FUNC();
     
