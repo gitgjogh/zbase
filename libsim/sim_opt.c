@@ -475,6 +475,10 @@ int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     {
         xprint("'%s", *((char **)dst));
     }
+    else if (act == CMDL_ACT_HELP)
+    {
+        xlprint(iter->layer + 1, "-%s <%%s>{%d} \t(ref)\n", opt->names, opt->narg);
+    }
 
     return 0;
 }
@@ -496,6 +500,10 @@ int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     else if (act == CMDL_ACT_RESULT)
     {
         xprint("'%s'", *((char **)dst));
+    }
+    else if (act == CMDL_ACT_HELP)
+    {
+        xlprint(iter->layer + 1, "-%s <%%s>{%d} \t(cpy)\n", opt->names, opt->narg);
     }
 
     return 0;
@@ -522,6 +530,10 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     else if (act == CMDL_ACT_RESULT)
     {
         xprint("'%d'", *((int*)dst));
+    }
+    else if (act == CMDL_ACT_HELP)
+    {
+        xlprint(iter->layer + 1, "-%s <%%d>{%d}\n", opt->names, opt->narg);
     }
 
     return 0;
@@ -893,9 +905,8 @@ int cmdl_help(cmdl_iter_t *iter, void* null, int optc, cmdl_opt_t optv[])
     for (i=0; i<optc; ++i) 
     {
         cmdl_opt_t *opt = &optv[i];
-        xlprint(iter->layer, "-%s, {%d}, help='%s', default='%s';\n", 
-                opt->names, opt->narg, opt->help, 
-                SAFE_STR(opt->default_val, "") );
+        xlprint(iter->layer, "-%s, [%s], \t%s\n", 
+                opt->names, SAFE_STR(opt->default_val, ""), SAFE_STR(opt->help, ""));
 
         opt->parse(iter, 0, CMDL_ACT_HELP, opt);
 
