@@ -404,9 +404,12 @@ int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     {
         char *flag=0;
         char *last=0;
-        char *arg = cmdl_iter_next(iter);
-        if (!arg) {
-            return -1;
+        char *arg = cmdl_peek_next(iter);
+        if (!arg || arg[0] == '-') {
+            xerr("%s has no arg\n", cmdl_iter_curr(iter));
+            return CMDL_RET_ERROR;
+        } else {
+            cmdl_iter_next(iter);
         }
 
         int *i_range = dst;
@@ -458,9 +461,12 @@ int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 {
     if (act == CMDL_ACT_PARSE)
     {
-        char *arg = cmdl_iter_next(iter);
-        if (!arg) {
+        char *arg = cmdl_peek_next(iter);
+        if (!arg || arg[0] == '-') {
+            xerr("%s has no arg\n", cmdl_iter_curr(iter));
             return CMDL_RET_ERROR;
+        } else {
+            cmdl_iter_next(iter);
         }
         *((char **)dst) = arg;
         return 2;
@@ -477,9 +483,12 @@ int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 {
     if (act == CMDL_ACT_PARSE)
     {
-        char *arg = cmdl_iter_next(iter);
-        if (!arg) {
+        char *arg = cmdl_peek_next(iter);
+        if (!arg || arg[0] == '-') {
+            xerr("%s has no arg\n", cmdl_iter_curr(iter));
             return CMDL_RET_ERROR;
+        } else {
+            cmdl_iter_next(iter);
         }
         strcpy(*((char **)dst), arg);
         return 2;
@@ -496,11 +505,12 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 {
     if (act == CMDL_ACT_PARSE)
     {
-        char *arg = cmdl_iter_next(iter);
+        char *arg = cmdl_peek_next(iter);
         if (!arg || arg[0]=='-') {
             if (opt->narg==0) {
                 arg = SAFE_STR(opt->default_val, "1");
             } else {
+                xerr("%s has no arg\n", cmdl_iter_curr(iter));
                 return CMDL_RET_ERROR;
             }
         } else {
@@ -546,7 +556,8 @@ int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 {
     if (act == CMDL_ACT_PARSE)
     {
-        char *arg = cmdl_iter_next(iter);
+        char *arg = cmdl_iter_curr(iter);
+        opt->narg = 0;
         
         if (0==strcmp(arg, "-xnon")) {
             xlog_set_level(SLOG_NON);
@@ -560,6 +571,7 @@ int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 
         if (0==strcmp(arg, "-xl") || 0==strcmp(arg, "-xlevel")) {
             int level;
+            opt->narg = 1;
             int r = cmdl_parse_int(iter, &level, act, opt);
             if (r>=0) {
                 xlog_set_level(level);
@@ -587,7 +599,6 @@ int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
 {
     if (act == CMDL_ACT_PARSE)
     {
-        cmdl_iter_next(iter);
         return CMDL_RET_HELP;
     }
 
