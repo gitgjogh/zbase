@@ -106,8 +106,9 @@ void    cmdl_iter_dbg (cmdl_iter_t *iter);
 
 typedef enum {
     CMDL_ACT_PARSE = 0,
-    CMDL_ACT_HELP,
-    CMDL_ACT_RESULT,
+    CMDL_ACT_HELP,          //<! print help
+    CMDL_ACT_ARGFMT,        //<! print arg format
+    CMDL_ACT_RESULT,        //<! print parsing result
 }
 cmdl_act_t;
 
