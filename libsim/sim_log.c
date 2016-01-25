@@ -93,7 +93,9 @@ int slogv(slog_t *sl, int level, const char *prompt, const char *fmt, va_list ap
 {
     FILE *fp = 0;
     if (sl->b_inited) {
-        level = clip(level, SLOG_NON, SLOG_ALL);
+        //level = clip(level, SLOG_NON, SLOG_ALL);
+		level = (level<SLOG_NON) ? SLOG_NON : level;
+		level = (level>SLOG_ALL) ? SLOG_ALL : level;
         fp = sl->fp[level];
     } else {
         fp = (level <= SLOG_ERR) ? stderr : stdout;
