@@ -285,7 +285,6 @@ int ref_sval_2_idx(int nref, const opt_ref_t *refs, const char* val)
 
 int ref_ival_2_idx(int nref, const opt_ref_t *refs, int val)
 {
-    int i;
     char s[256] = {0};
 
 #ifdef WIN32
@@ -394,7 +393,7 @@ char*   cmdl_iter_pop(cmdl_iter_t *iter, int b_opt)
 
 cmdl_iter_t  cmdl_layer_init(int layer)
 {
-    cmdl_iter_t iter = { layer };
+    cmdl_iter_t iter = { 0, 0, 0, 0, layer };
     return iter;
 }
 
@@ -842,7 +841,7 @@ static
 int cmdl_check(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
 {
     int n_err = 0;
-    int i_opt, i_arg;
+    int i_opt;
     char *argv[2] = {0};
     
     ENTER_FUNC();
@@ -935,7 +934,7 @@ int cmdl_help(cmdl_iter_t *iter, void* null, int optc, cmdl_opt_t optv[])
  */
 int cmdl_result(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
 {
-    int i_opt, i_arg;
+    int i_opt;
     
     ENTER_FUNC();
 
