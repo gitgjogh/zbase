@@ -445,11 +445,10 @@ static int scan_for_intN(const char *_str, int Nbit, int64_t *ret_, const char *
             Nbit == 32 ? INT32_MAX : (
             Nbit == 16 ? INT16_MAX : (
             Nbit ==  8 ? INT8_MAX : 0))));
-    max += (b_neg ? 1 : 0);
 
     b_err = scan_for_uint64_pre(_str, max, &ret, &end);
 
-    if (ret_) { *ret_ = b_neg ? -ret : ret; }
+    if (ret_) { *ret_ = b_neg ? -(int64_t)ret : ret; }
     if (end_) { *end_ = end; }
 
     return b_err;
@@ -467,7 +466,7 @@ int scan_for_uint32(const char *_str, uint32_t *ret_, const char **end_)
 {
     uint64_t ret;
     int b_err = scan_for_uintN(_str, 32, &ret, end_);
-    if (ret_) { *ret_ = ret; }
+    if (ret_) { *ret_ = (uint32_t)ret; }
 
     return b_err;
 }
@@ -475,7 +474,7 @@ int scan_for_uint16(const char *_str, uint16_t *ret_, const char **end_)
 {
     uint64_t ret;
     int b_err = scan_for_uintN(_str, 16, &ret, end_);
-    if (ret_) { *ret_ = ret; }
+    if (ret_) { *ret_ = (uint16_t)ret; }
 
     return b_err;
 }
@@ -491,7 +490,7 @@ int scan_for_int32(const char *_str, int32_t *ret_, const char **end_)
 {
     int64_t ret;
     int b_err = scan_for_intN(_str, 32, &ret, end_);
-    if (ret_) { *ret_ = ret; }
+    if (ret_) { *ret_ = (int32_t)ret; }
 
     return b_err;
 }
@@ -499,7 +498,7 @@ int scan_for_int16(const char *_str, int16_t *ret_, const char **end_)
 {
     int64_t ret;
     int b_err = scan_for_intN(_str, 16, &ret, end_);
-    if (ret_) { *ret_ = ret; }
+    if (ret_) { *ret_ = (int16_t)ret; }
 
     return b_err;
 }
@@ -562,7 +561,7 @@ str2float_end:
     return b_err;
 }
 
-int str_2_uint(const char *_str, unsigned int *ret_)
+unsigned int str_2_uint(const char *_str, unsigned int *ret_)
 {
     uint64_t ret;
     const char *end;
@@ -572,7 +571,7 @@ int str_2_uint(const char *_str, unsigned int *ret_)
         xerr("str_2_uint(%s) not nul ending\n", _str);
         b_err |= SCAN_ERR_NNULEND;
     }
-    if (ret_) { *ret_ = ret; }
+    if (ret_) { *ret_ = (unsigned int)ret; }
 
     return b_err;
 }
@@ -586,7 +585,7 @@ int str_2_int(const char *_str, int *ret_)
         xerr("str_2_int(%s) not nul ending\n", _str);
         b_err |= SCAN_ERR_NNULEND;
     }
-    if (ret_) { *ret_ = ret; }
+    if (ret_) { *ret_ = (int)ret; }
 
     return b_err;
 }

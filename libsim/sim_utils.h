@@ -189,7 +189,7 @@ typedef struct str_iterator {
     int     sublen;
 }str_iter_t;
 
-str_iter_t  str_iter_init(char *str, const int len);
+str_iter_t  str_iter_init(char *str, int len);
 
 char *str_iter_1st_field(str_iter_t *iter, 
                     const char* prejumpset,
@@ -235,7 +235,7 @@ int scan_for_int64(const char *_str, int64_t *ret_, const char **end_);
 int scan_for_int32(const char *_str, int32_t *ret_, const char **end_);
 int scan_for_int16(const char *_str, int16_t *ret_, const char **end_);
 int scan_for_float(const char *_str, float *ret_, const char **end_);
-int str_2_uint(const char *_str, unsigned int *ret_);
+unsigned int str_2_uint(const char *_str, unsigned int *ret_);
 int str_2_int(const char *_str, int *ret_);
 
 
