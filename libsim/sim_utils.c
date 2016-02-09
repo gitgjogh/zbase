@@ -87,9 +87,12 @@ int num_leading_zero_bits_u32(uint32_t val)
 
 int clip(int v, int minv, int maxv)
 {
-    v = (v<minv) ? minv : v;
-    v = (v>maxv) ? maxv : v;
-    return v;
+    if (minv > maxv) 
+        mem_swap(&minv, &maxv, sizeof(int), 1);
+
+    if      (v < minv) return minv;
+    else if (v > maxv) return maxv;
+    else               return v;
 }
 
 /**
