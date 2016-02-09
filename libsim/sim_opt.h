@@ -18,6 +18,7 @@
 #define __SIM_OPT_H__
 
 
+#include <stddef.h>
 #include "sim_utils.h"
 #include "sim_log.h"
 
