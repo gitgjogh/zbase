@@ -101,6 +101,10 @@ extern "C" {
 #define ARRAY_SIZE(a)   (sizeof(a)/sizeof(a[0]))
 #endif
 
+#ifndef ARRAY_TUPLE 
+#define ARRAY_TUPLE(a)  ARRAY_SIZE(a), a
+#endif
+
 #ifndef MAX
 #define MAX(a,b)        ((a)>(b) ? (a) : (b))
 #endif

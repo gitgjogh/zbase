@@ -303,7 +303,7 @@ int enum_val_2_idx(int nenum, const opt_enum_t* enums, int val)
             return i;
         }
     }
-    return 0;
+    return -1;
 }
 
 const char *enum_val_2_name(int nenum, const opt_enum_t* enums, int val)
@@ -472,7 +472,7 @@ int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *
     }
     else if (act == CMDL_ACT_RESULT)
     {
-        xprint("'%s", *((char **)dst));
+        xprint("'%s'", *((char **)dst));
     }
     else if (act == CMDL_ACT_ARGFMT) {
         xprint("<%%s>");
@@ -946,8 +946,9 @@ int cmdl_result(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[])
         xlprint(iter->layer, "-%s = ", opt->names);
         opt->parse(iter, (char *)dst + opt->dst_offset, CMDL_ACT_RESULT, opt);
 
-        //Caution: Define the optv[] in global scope. Or else the following
-        //          way to get ref.name or enum.name would make no sense. 
+        //FIXME: The following way to get ref.name or enum.name make no sense when:
+        //  1. optv[] was defined in local scope. 
+        //  2. optv[] was reused by diff params.
         if (opt->i_ref >= 0 && opt->i_ref < opt->nref) {
             xprint(" (%%%s)", opt->refs[opt->i_ref].name);
         }
