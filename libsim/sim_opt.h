@@ -52,8 +52,8 @@ int     ios_feof(ios_t *p, int ich);
 char*   get_argv(int argc, char *argv[], int i, const char *name);
 
 /**
- *  \param [in] i The idx of curr param to be parsed. 
- *  \return The idx of the next param to be parsed.
+ *  @param[in] i The idx of curr param to be parsed.
+ *  @return The idx of the next param to be parsed.
  */
 int     arg_parse_range(int i, int argc, char *argv[], int i_range[2]);
 int     arg_parse_str(int i, int argc, char *argv[], char **p);
@@ -107,9 +107,9 @@ void    cmdl_iter_dbg (cmdl_iter_t *iter);
 
 typedef enum {
     CMDL_ACT_PARSE = 0,
-    CMDL_ACT_HELP,          //<! print help
-    CMDL_ACT_ARGFMT,        //<! print arg format
-    CMDL_ACT_RESULT,        //<! print parsing result
+    CMDL_ACT_HELP,          ///< print help
+    CMDL_ACT_ARGFMT,        ///< print arg format
+    CMDL_ACT_RESULT,        ///< print parsing result
 }
 cmdl_act_t;
 
@@ -125,13 +125,13 @@ cmdl_ret_t;
 
 typedef struct cmdl_option_description cmdl_opt_t;
 /**
- * @param iter cmdl_iter_curr(iter) is the name for current option befor calling, 
- *               while the last arg be parsed after calling.
+ * @param[in,out] iter  cmdl_iter_curr(iter) is the name for current option
+ *               befor calling, while the last arg be parsed after calling.
  *             cmdl_iter_next(iter) is the first arg for current option before 
  *               calling, while the next arg/option to be parsed after calling.
- * @param dest arg receiver
- * @param action @see sarg_type_t
- * @param param extra param help for arg parsing
+ * @param[out]    dst   arg receiver
+ * @param[in]     act   see @cmdl_act_t
+ * @param[in,out] opt   extra properies used for arg parsing
  * @return number (>=0) of args being parsed, (-1) means error
  */
 typedef int (*cmdl_parse_func_t)(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
@@ -160,7 +160,7 @@ typedef struct cmdl_option_description {
         const opt_enum_t* enums;
     };
     
-//<! private:
+///< private props:
     int     n_parse;
     int     argvIdx;
     int     b_default;
