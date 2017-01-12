@@ -594,15 +594,15 @@ int str_2_int(const char *_str, int *ret_)
 }
 
 void mem_put_lte16(uint8_t *mem, uint32_t val) {
-    mem[0] = ((val    ) && 0xff);
-    mem[1] = ((val>> 8) && 0xff);
+    mem[0] = ((val    ) & 0xff);
+    mem[1] = ((val>> 8) & 0xff);
 }
   
 void mem_put_lte32(uint8_t *mem, uint32_t val) {
-    mem[0] = ((val    ) && 0xff);
-    mem[1] = ((val>> 8) && 0xff);
-    mem[2] = ((val>>16) && 0xff);
-    mem[3] = ((val>>24) && 0xff);
+    mem[0] = ((val    ) & 0xff);
+    mem[1] = ((val>> 8) & 0xff);
+    mem[2] = ((val>>16) & 0xff);
+    mem[3] = ((val>>24) & 0xff);
 }
 
 
