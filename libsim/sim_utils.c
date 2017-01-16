@@ -336,7 +336,7 @@ int scan_for_uint64_npre(const char *_str, uint32_t base, uint64_t max, uint64_t
     uint64_t max_mod;
 
     const char *end = _str;
-    while (c = *end) 
+    while ((c = *end))
     {
         v = isdigit(c) ? (c - '0'     ) : (
             islower(c) ? (c - 'a' + 10) : (

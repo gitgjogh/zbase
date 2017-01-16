@@ -30,6 +30,7 @@ extern "C" {
 
 #define EMPTYSTR                ("")
 #define SAFE_STR(s, nnstr)      ((s)?(s):(nnstr))
+#define SIM_NULL_END            (0)
 
 
 #define MAX_MODE    8
@@ -75,13 +76,15 @@ typedef struct opt_enum {
     int   val;
 } opt_enum_t;
 
-int ref_name_2_idx(int nref, const opt_ref_t *refs, const char *name);
-int ref_sval_2_idx(int nref, const opt_ref_t *refs, const char* val);
-int ref_ival_2_idx(int nref, const opt_ref_t *refs, int val);
-int enum_val_2_idx(int nenum, const opt_enum_t* enums, int val);
-int enum_name_2_idx(int nenum, const opt_enum_t* enums, const char *name);
-const char *enum_val_2_name(int nenum, const opt_enum_t* enums, int val);
-
+/* null end (name for) refs[] or enums[] */
+const opt_ref_t*  sim_name_2_ref(const opt_ref_t refs[], const char *name);
+const opt_ref_t*  sim_sval_2_ref(const opt_ref_t refs[], const char *sval);
+const opt_ref_t*  sim_ival_2_ref(const opt_ref_t refs[], int ival);
+#define     sim_val_2_ref       sim_sval_2_ref
+const opt_enum_t* sim_name_2_enum(const opt_enum_t enums[], const char *name);
+const opt_enum_t* sim_sval_2_enum(const opt_enum_t enums[], const char *sval);
+const opt_enum_t* sim_ival_2_enum(const opt_enum_t enums[], int ival);
+#define     sim_val_2_enum      sim_sval_2_enum
 
 typedef struct cmdl_iter {
     char**  argv;
@@ -110,8 +113,7 @@ typedef enum {
     CMDL_ACT_HELP,          ///< print help
     CMDL_ACT_ARGFMT,        ///< print arg format
     CMDL_ACT_RESULT,        ///< print parsing result
-}
-cmdl_act_t;
+} CMDL_ACT_e;
 
 typedef enum {
     CMDL_RET_ERROR_CHECK = -12,
@@ -120,8 +122,7 @@ typedef enum {
     CMDL_RET_HELP  = -3,
     CMDL_RET_NOT_OPT = -2,      /* end with non-option, maybe not error */
     CMDL_RET_UNKNOWN = -1,      /* end with unkown option, maybe not error */
-}
-cmdl_ret_t;
+} CMDL_RET_e;
 
 typedef struct cmdl_option_description cmdl_opt_t;
 /**
@@ -134,50 +135,45 @@ typedef struct cmdl_option_description cmdl_opt_t;
  * @param[in,out] opt   extra properies used for arg parsing
  * @return number (>=0) of args being parsed, (-1) means error
  */
-typedef int (*cmdl_parse_func_t)(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_range (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
-int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, cmdl_act_t act, cmdl_opt_t *opt);
+typedef int (*cmdl_parse_func_t)(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_range (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
+int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *opt);
 
 
 typedef struct cmdl_option_description {
     int     b_required;
     char*   names;
-    int     narg;                       /* (-1) means unknon, (0) means 0 or 1 */
+    int     narg;                       /* (-1) means unknown, (0) means 0 or 1 */
     cmdl_parse_func_t parse;
     size_t  dst_offset;
     char*   default_val;
     char*   help;
     
-    short   nref;
-    short   nenum;
-    union {
-        const opt_ref_t* refs;
-        const opt_enum_t* enums;
-    };
+    const opt_ref_t*  refs;
+    const opt_enum_t* enums;
     
 ///< private props:
     int     n_parse;
     int     argvIdx;
     int     b_default;
-    int     i_ref;
-    int     i_enum;
+    const opt_ref_t*  p_ref;
+    const opt_enum_t* p_enum;
 } cmdl_opt_t;
 
-int cmdl_set_ref(int optc, cmdl_opt_t optv[], 
-                const char *name, int n_ref, const opt_ref_t *refs);
-int cmdl_set_enum(int optc, cmdl_opt_t optv[], 
-                const char *name, int n_enum, const opt_enum_t *enums);
+cmdl_opt_t* cmdl_getdesc_byref (cmdl_opt_t optv[], const char *ref_name);
+cmdl_opt_t* cmdl_getdesc_byname(cmdl_opt_t optv[], const char *opt_name);
+cmdl_opt_t* cmdl_set_ref (cmdl_opt_t optv[], const char *opt_name, const opt_ref_t *refs);
+cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const opt_enum_t *enums);
 
-int cmdl_getdesc_byref (int optc, cmdl_opt_t optv[], const char *name);
-int cmdl_getdesc_byname(int optc, cmdl_opt_t optv[], const char *name);
-int cmdl_parse(cmdl_iter_t *iter, void *dst, int optc, cmdl_opt_t optv[]);
-int cmdl_help(cmdl_iter_t *iter, void* null, int optc, cmdl_opt_t optv[]);
-int cmdl_result(cmdl_iter_t *iter, void* dst, int optc, cmdl_opt_t optv[]);
+
+int cmdl_parse(cmdl_iter_t *iter, void *dst, cmdl_opt_t optv[]);
+int cmdl_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[]);
+int cmdl_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[]);
 
 
 #ifdef __cplusplus
