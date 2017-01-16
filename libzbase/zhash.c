@@ -75,7 +75,7 @@ uint32_t zh_cstr_time33(uint32_t type, const char *key, uint32_t *key_len)
     int      c = 0;
     uint32_t i = 0;
     uint32_t hash = type;
-    for (i=0; c=key[i]; ++i) {
+    for (i=0; (c=key[i]); ++i) {
         hash = hash * 33 + c; 
     } 
 

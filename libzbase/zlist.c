@@ -15,7 +15,7 @@
 *****************************************************************************/
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "zlist.h"
@@ -71,7 +71,7 @@ void zlist_buf_detach(zlist_t *zl)
 {
     SIM_FREEP(zl->qidx_2_bidx);
     if (!zl->b_allocated) {
-        memset(zl, 0, sizeof(zl));
+        memset(zl, 0, sizeof(zlist_t));
     }
 }
 

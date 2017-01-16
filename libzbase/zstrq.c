@@ -122,7 +122,7 @@ zspace_t zstrq_get_buf_space(zstrq_t *sq)
 static
 zsq_char_t* zstrq_set_str_base(zstrq_t *sq, zqidx_t qidx, zsq_char_t *base)
 {
-    sq->ptr_array[-qidx] = base;
+    return sq->ptr_array[-qidx] = base;
 }
 
 zsq_char_t* zstrq_get_str_base(zstrq_t *sq, zqidx_t qidx)
