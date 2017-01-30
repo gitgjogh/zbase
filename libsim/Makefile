@@ -7,7 +7,7 @@ CFLAGS = -c -O3
 LIBS = -lm
 
 TMPDIR = mk.tmp
-LIBSIMSRCS = sim_log.c sim_utils.c sim_opt.c
+LIBSIMSRCS = sim_log.c sim_utils.c sim_opt.c sim_test.c
 LIBSIMOBJS = $(LIBSIMSRCS:%.c=$(TMPDIR)/%.o)
 LIBSIM = libsim.a
 
