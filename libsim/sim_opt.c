@@ -261,11 +261,11 @@ int arg_parse_xlevel(int i, int argc, char *argv[])
     return i;
 }
 
-const opt_ref_t* sim_name_2_ref(const opt_ref_t *refs, const char *name)
+const cmdl_ref_t* sim_name_2_ref(const cmdl_ref_t *refs, const char *name)
 {
     if (refs == 0 || name == 0) { return 0; }
 
-    for (const opt_ref_t *p = refs; p->name; ++p) {
+    for (const cmdl_ref_t *p = refs; p->name; ++p) {
         if (0==strcmp(p->name, name)) {
             return p;
         }
@@ -274,11 +274,11 @@ const opt_ref_t* sim_name_2_ref(const opt_ref_t *refs, const char *name)
 }
 
 /** string val to idx */
-const opt_ref_t* sim_sval_2_ref(const opt_ref_t *refs, const char* sval)
+const cmdl_ref_t* sim_sval_2_ref(const cmdl_ref_t *refs, const char* sval)
 {
     if (refs == 0 || sval == 0) { return 0; }
 
-    for (const opt_ref_t *p = refs; p->name; ++p) {
+    for (const cmdl_ref_t *p = refs; p->name; ++p) {
         if (0==strcmp(p->val, sval)) {
             return p;
         }
@@ -287,7 +287,7 @@ const opt_ref_t* sim_sval_2_ref(const opt_ref_t *refs, const char* sval)
 }
 
 /** int val to idx */
-const opt_ref_t* ref_ival_2_idx(opt_ref_t *refs, int val)
+const cmdl_ref_t* ref_ival_2_idx(cmdl_ref_t *refs, int val)
 {
     char s[256] = {0};
 
@@ -301,11 +301,11 @@ const opt_ref_t* ref_ival_2_idx(opt_ref_t *refs, int val)
     return sim_sval_2_ref(refs, s);
 }
 
-const opt_enum_t* sim_ival_2_enum(const opt_enum_t* enums, int val)
+const cmdl_enum_t* sim_ival_2_enum(const cmdl_enum_t* enums, int val)
 {
     if (enums == 0) { return 0; }
 
-    for (const opt_enum_t *p = enums; p->name; ++p) {
+    for (const cmdl_enum_t *p = enums; p->name; ++p) {
         if (p->val == val) {
             return p;
         }
@@ -313,7 +313,7 @@ const opt_enum_t* sim_ival_2_enum(const opt_enum_t* enums, int val)
     return 0;
 }
 
-const opt_enum_t* sim_sval_2_enum(const opt_enum_t* enums, const char *sval)
+const cmdl_enum_t* sim_sval_2_enum(const cmdl_enum_t* enums, const char *sval)
 {
     if (enums == 0 || sval == 0) { return 0; }
 
@@ -321,11 +321,11 @@ const opt_enum_t* sim_sval_2_enum(const opt_enum_t* enums, const char *sval)
     return sim_ival_2_enum(enums, ival);
 }
 
-const opt_enum_t* sim_name_2_enum(const opt_enum_t* enums, const char *name)
+const cmdl_enum_t* sim_name_2_enum(const cmdl_enum_t* enums, const char *name)
 {
     if (enums == 0 || name == 0) { return 0; }
 
-    for (const opt_enum_t *p = enums; p->name; ++p) {
+    for (const cmdl_enum_t *p = enums; p->name; ++p) {
         if (0 == strcmp(p->name, name)) {
             return p;
         }
@@ -449,12 +449,12 @@ int cmdl_parse_range (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         
         return 2;
     }
-    else if (act == CMDL_ACT_RESULT)
+    else if (act == CMDL_PRI_RESULT)
     {
         int *range = (int *)dst;
         xprint("'%d~%d';\n", range[0], range[1]);
     }
-    else if (act == CMDL_ACT_HELP)
+    else if (act == CMDL_PRI_HELP)
     {
         xlprint(iter->layer+1, "`$start[~$last]`  or `[$start]~$last`\n");
         xlprint(iter->layer+1, "`$start[+$count]` or `[$start]+$count`\n");
@@ -477,11 +477,11 @@ int cmdl_parse_str   (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         *((char **)dst) = arg;
         return 2;
     }
-    else if (act == CMDL_ACT_RESULT)
+    else if (act == CMDL_PRI_RESULT)
     {
         xprint("'%s'", *((char **)dst));
     }
-    else if (act == CMDL_ACT_ARGFMT) {
+    else if (act == CMDL_PRI_ARGFMT) {
         xprint("<%%s>");
     }
 
@@ -502,11 +502,11 @@ int cmdl_parse_strcpy(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         strcpy(*((char **)dst), arg);
         return 2;
     }
-    else if (act == CMDL_ACT_RESULT)
+    else if (act == CMDL_PRI_RESULT)
     {
         xprint("'%s'", *((char **)dst));
     }
-    else if (act == CMDL_ACT_ARGFMT) {
+    else if (act == CMDL_PRI_ARGFMT) {
         xprint("<%%s>");
     }
 
@@ -531,11 +531,11 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         int b_err = str_2_int(arg, dst);
         return b_err ? CMDL_RET_ERROR : 2;
     }
-    else if (act == CMDL_ACT_RESULT)
+    else if (act == CMDL_PRI_RESULT)
     {
         xprint("'%d'", *((int*)dst));
     }
-    else if (act == CMDL_ACT_ARGFMT)
+    else if (act == CMDL_PRI_ARGFMT)
     {
         xprint("<%%d>");
     }
@@ -558,13 +558,13 @@ int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         }
         return opt->narg + 1;
     }
-    else if (act == CMDL_ACT_RESULT)
+    else if (act == CMDL_PRI_RESULT)
     {
         for (i=0; i<opt->narg; ++i) {
             xprint("%s'%d'", i?"":",", ((int*)dst)[i]);
         }
     }
-    else if (act == CMDL_ACT_ARGFMT) {
+    else if (act == CMDL_PRI_ARGFMT) {
         xprint("<%%d,%%d,...>");
     }
 
@@ -600,11 +600,11 @@ int cmdl_parse_xlevel(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         
         return CMDL_RET_ERROR;
     }
-    else if (act == CMDL_ACT_RESULT)
+    else if (act == CMDL_PRI_RESULT)
     {
         xprint("'%d'", xlog_get_level());
     }
-    else if (act == CMDL_ACT_HELP)
+    else if (act == CMDL_PRI_HELP)
     {
         xlprint(iter->layer+1, "-xall,             log all\n");
         xlprint(iter->layer+1, "-xnon,             log non\n");
@@ -625,7 +625,7 @@ int cmdl_parse_help  (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
 }
 
 /* Get opt by ref_name: user type "-%ref_name" in cmdl */
-cmdl_opt_t* cmdl_getdesc_byref (cmdl_opt_t optv[], const char *ref_name)
+cmdl_opt_t* cmdl_ref_2_opt (cmdl_opt_t optv[], const char *ref_name)
 {
     for (cmdl_opt_t* opt = optv; opt->names; ++opt)
     {
@@ -637,7 +637,7 @@ cmdl_opt_t* cmdl_getdesc_byref (cmdl_opt_t optv[], const char *ref_name)
     return 0;
 }
 
-cmdl_opt_t* cmdl_getdesc_byname(cmdl_opt_t optv[], const char *opt_name)
+cmdl_opt_t* cmdl_name_2_opt(cmdl_opt_t optv[], const char *opt_name)
 {
     for (cmdl_opt_t* opt = optv; opt->names; ++opt) {
         //xdbg("%d: %s, %s\n", i, name, optv[i].names);
@@ -648,18 +648,18 @@ cmdl_opt_t* cmdl_getdesc_byname(cmdl_opt_t optv[], const char *opt_name)
     return 0;
 }
 
-cmdl_opt_t* cmdl_set_ref(cmdl_opt_t optv[], const char *opt_name, const opt_ref_t *refs)
+cmdl_opt_t* cmdl_set_ref(cmdl_opt_t optv[], const char *opt_name, const cmdl_ref_t *refs)
 {
-    cmdl_opt_t* opt = cmdl_getdesc_byname(optv, opt_name);
+    cmdl_opt_t* opt = cmdl_name_2_opt(optv, opt_name);
     if (opt) {
         opt->refs = refs;
     }
     return opt;
 }
 
-cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const opt_enum_t *enums)
+cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const cmdl_enum_t *enums)
 {
-    cmdl_opt_t* opt = cmdl_getdesc_byname(optv, opt_name);
+    cmdl_opt_t* opt = cmdl_name_2_opt(optv, opt_name);
     if (opt) {
         opt->enums = enums;
     }
@@ -751,7 +751,7 @@ int cmdl_init(cmdl_opt_t optv[])
     return n_err;
 }
 
-int cmdl_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
+int cmdlgrp_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
 {
     ENTER_FUNC();
 
@@ -782,9 +782,9 @@ int cmdl_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
         cmdl_iter_t _iter2 = cmdl_iter_init(2, ref_expand, 0);
         
         if (arg[1] == '%') {                                        /* -%ref or -%enum */
-            p_opt = cmdl_getdesc_byref(optv, &arg[2]);
+            p_opt = cmdl_ref_2_opt(optv, &arg[2]);
         } else {                                                    /* -opt arg ... */
-            p_opt = cmdl_getdesc_byname(optv, &arg[1]);
+            p_opt = cmdl_name_2_opt(optv, &arg[1]);
         }
         if (p_opt == 0) {
             xlog_cmdl("argv[%d] (%s) unrecognized\n", cmdl_iter_idx(iter), arg);
@@ -881,7 +881,7 @@ void cmdl_iter_dbg (cmdl_iter_t *_iter)
 /**
  * @param iter just for layer trace
  */
-int cmdl_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[])
+int cmdlgrp_print_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[])
 {
     ENTER_FUNC();
 
@@ -889,20 +889,20 @@ int cmdl_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[])
     for (cmdl_opt_t *opt = optv; opt->names; ++opt)
     {
         xlprint(iter->layer, "-%s ",opt->names);
-        opt->parse(iter, 0, CMDL_ACT_ARGFMT, opt);
+        opt->parse(iter, 0, CMDL_PRI_ARGFMT, opt);
         if (opt->default_val) {
             xprint(", [%s]", opt->default_val);
         }
         xprint(", \t%s\n", SAFE_STR(opt->help, ""));
-        opt->parse(iter, 0, CMDL_ACT_HELP, opt);
+        opt->parse(iter, 0, CMDL_PRI_HELP, opt);
 
         if (opt->refs) {
-            for (const opt_ref_t *r = opt->refs; r->name; ++r) {
+            for (const cmdl_ref_t *r = opt->refs; r->name; ++r) {
                 xlprint(iter->layer+1, "%%%-10s \t `%s`\n", r->name, r->val);
             }
         }
         if (opt->enums) {
-            for (const opt_enum_t *e = opt->enums; e->name; ++e) {
+            for (const cmdl_enum_t *e = opt->enums; e->name; ++e) {
                 xlprint(iter->layer+1, "%%%-10s \t `%d`\n", e->name, e->val);
             }
         }
@@ -917,7 +917,7 @@ int cmdl_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[])
 /**
  * @param iter just for layer trace
  */
-int cmdl_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
+int cmdlgrp_print_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
 {
     ENTER_FUNC();
 
@@ -926,7 +926,7 @@ int cmdl_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
     for (cmdl_opt_t *opt = optv; opt->names; ++opt)
     {
         xlprint(iter->layer, "-%s = ", opt->names);
-        opt->parse(iter, (char *)dst + opt->dst_offset, CMDL_ACT_RESULT, opt);
+        opt->parse(iter, (char *)dst + opt->dst_offset, CMDL_PRI_RESULT, opt);
 
         //FIXME: The following way to get ref.name or enum.name make no sense when:
         //  1. optv[] was defined in local scope. 

@@ -66,24 +66,24 @@ int     opt_parse_ints(int i, int argc, char *argv[], int n, int *p[]);
 int     arg_parse_xlevel(int i, int argc, char *argv[]);
 
 
-typedef struct opt_reference {
+typedef struct cmdl_reference {
     char *name;
     char *val;
-} opt_ref_t;
+} cmdl_ref_t;
 
-typedef struct opt_enum {
+typedef struct cmdl_enum {
     char *name;
     int   val;
-} opt_enum_t;
+} cmdl_enum_t;
 
 /* null end (name for) refs[] or enums[] */
-const opt_ref_t*  sim_name_2_ref(const opt_ref_t refs[], const char *name);
-const opt_ref_t*  sim_sval_2_ref(const opt_ref_t refs[], const char *sval);
-const opt_ref_t*  sim_ival_2_ref(const opt_ref_t refs[], int ival);
+const cmdl_ref_t*  sim_name_2_ref(const cmdl_ref_t refs[], const char *name);
+const cmdl_ref_t*  sim_sval_2_ref(const cmdl_ref_t refs[], const char *sval);
+const cmdl_ref_t*  sim_ival_2_ref(const cmdl_ref_t refs[], int ival);
 #define     sim_val_2_ref       sim_sval_2_ref
-const opt_enum_t* sim_name_2_enum(const opt_enum_t enums[], const char *name);
-const opt_enum_t* sim_sval_2_enum(const opt_enum_t enums[], const char *sval);
-const opt_enum_t* sim_ival_2_enum(const opt_enum_t enums[], int ival);
+const cmdl_enum_t* sim_name_2_enum(const cmdl_enum_t enums[], const char *name);
+const cmdl_enum_t* sim_sval_2_enum(const cmdl_enum_t enums[], const char *sval);
+const cmdl_enum_t* sim_ival_2_enum(const cmdl_enum_t enums[], int ival);
 #define     sim_val_2_enum      sim_sval_2_enum
 
 typedef struct cmdl_iter {
@@ -110,9 +110,9 @@ void    cmdl_iter_dbg (cmdl_iter_t *iter);
 
 typedef enum {
     CMDL_ACT_PARSE = 0,
-    CMDL_ACT_HELP,          ///< print help
-    CMDL_ACT_ARGFMT,        ///< print arg format
-    CMDL_ACT_RESULT,        ///< print parsing result
+    CMDL_PRI_HELP,          ///< print help
+    CMDL_PRI_ARGFMT,        ///< print arg format
+    CMDL_PRI_RESULT,        ///< print parsing result
 } CMDL_ACT_e;
 
 typedef enum {
@@ -154,26 +154,26 @@ typedef struct cmdl_option_description {
     char*   default_val;
     char*   help;
     
-    const opt_ref_t*  refs;
-    const opt_enum_t* enums;
+    const cmdl_ref_t*  refs;
+    const cmdl_enum_t* enums;
     
 ///< private props:
     int     n_parse;
     int     argvIdx;
     int     b_default;
-    const opt_ref_t*  p_ref;
-    const opt_enum_t* p_enum;
+    const cmdl_ref_t*  p_ref;
+    const cmdl_enum_t* p_enum;
 } cmdl_opt_t;
 
-cmdl_opt_t* cmdl_getdesc_byref (cmdl_opt_t optv[], const char *ref_name);
-cmdl_opt_t* cmdl_getdesc_byname(cmdl_opt_t optv[], const char *opt_name);
-cmdl_opt_t* cmdl_set_ref (cmdl_opt_t optv[], const char *opt_name, const opt_ref_t *refs);
-cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const opt_enum_t *enums);
+cmdl_opt_t* cmdl_ref_2_opt (cmdl_opt_t optv[], const char *ref_name);
+cmdl_opt_t* cmdl_name_2_opt(cmdl_opt_t optv[], const char *opt_name);
+cmdl_opt_t* cmdl_set_ref (cmdl_opt_t optv[], const char *opt_name, const cmdl_ref_t *refs);
+cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const cmdl_enum_t *enums);
 
 
-int cmdl_parse(cmdl_iter_t *iter, void *dst, cmdl_opt_t optv[]);
-int cmdl_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[]);
-int cmdl_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[]);
+int cmdlgrp_parse(cmdl_iter_t *iter, void *dst, cmdl_opt_t optv[]);
+int cmdlgrp_print_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[]);
+int cmdlgrp_print_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[]);
 
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 #include "sim_opt.h"
 
-const opt_enum_t color_enum[] =
+const cmdl_enum_t color_enum[] =
 {
     {"white",   0},
     {"black",   1},
@@ -29,13 +29,13 @@ int cmdl_pet_parser(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *op
     cmdl_set_enum(pet_opt, "color", color_enum);
     
     if (act == CMDL_ACT_PARSE) {
-        return cmdl_parse(iter, dst, pet_opt);
+        return cmdlgrp_parse(iter, dst, pet_opt);
     }
-    else if (act == CMDL_ACT_HELP) {
-        return cmdl_help(iter, 0, pet_opt);
+    else if (act == CMDL_PRI_HELP) {
+        return cmdlgrp_print_help(iter, 0, pet_opt);
     }
-    else if (act == CMDL_ACT_RESULT) {
-        return cmdl_result(iter, dst, pet_opt);
+    else if (act == CMDL_PRI_RESULT) {
+        return cmdlgrp_print_result(iter, dst, pet_opt);
     }
     
     return 0;
@@ -58,15 +58,15 @@ int cmdl_test(int argc, char **argv)
     
     cmdl_param_t cfg;
     cmdl_iter_t iter = cmdl_iter_init(argc, argv, 0);
-    int r = cmdl_parse(&iter, &cfg, cmdl_opt);
+    int r = cmdlgrp_parse(&iter, &cfg, cmdl_opt);
     if (r == CMDL_RET_HELP) {
-        return cmdl_help(&iter, 0, cmdl_opt);
+        return cmdlgrp_print_help(&iter, 0, cmdl_opt);
     } else if (r < 0) {
         xerr("cmdl_parse() failed, ret=%d\n", r);
         return 1;
     }
     
-    cmdl_result(&iter, &cfg, cmdl_opt);
+    cmdlgrp_print_result(&iter, &cfg, cmdl_opt);
     
     return 0;
 }
