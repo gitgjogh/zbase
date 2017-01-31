@@ -157,12 +157,8 @@ typedef struct cmdl_option_description {
     const cmdl_ref_t*  refs;
     const cmdl_enum_t* enums;
     
-///< private props:
+///< private props only used inside cmdlgrp_parse():
     int     n_parse;
-    int     argvIdx;
-    int     b_default;
-    const cmdl_ref_t*  p_ref;
-    const cmdl_enum_t* p_enum;
 } cmdl_opt_t;
 
 cmdl_opt_t* cmdl_ref_2_opt (cmdl_opt_t optv[], const char *ref_name);

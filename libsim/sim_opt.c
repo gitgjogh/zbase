@@ -22,8 +22,9 @@
 
 #include "sim_opt.h"
 
-static int cmdl_init(cmdl_opt_t optv[]);
-static int cmdl_check(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[]);
+static int cmdlgrp_parse_init_check(cmdl_opt_t optv[]);
+static int cmdlgrp_parse_end_check(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[]);
+static int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt);
 
 
 void iof_cfg(ios_t *f, const char *path, const char *mode)
@@ -533,7 +534,15 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
     }
     else if (act == CMDL_PRI_RESULT)
     {
-        xprint("'%d'", *((int*)dst));
+        int ival = *((int*)dst);
+        xprint("'%d'", ival);
+        if (opt->enums) {
+            for (const cmdl_enum_t *pe = opt->enums; pe->name; ++pe) {
+                if (ival == pe->val) {
+                    xprint(" (%%%s)", pe->name);
+                }
+            }
+        }
     }
     else if (act == CMDL_PRI_ARGFMT)
     {
@@ -666,7 +675,9 @@ cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const cmdl_en
     return opt;
 }
 
-static
+/**
+ * expand ref or enum for single option
+ */
 int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt)
 {
     cmdl_iter_t _iter2;
@@ -684,13 +695,13 @@ int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt
     {
         xdbg("expand ref or enum '%s'\n", arg);
         if (opt->refs) {
-            opt->p_ref = sim_name_2_ref(opt->refs, &arg[1]);
-            if (opt->p_ref == 0) {
+            const cmdl_ref_t *p_ref = sim_name_2_ref(opt->refs, &arg[1]);
+            if (p_ref == 0) {
                 xerr("can't find -%s.%s as ref\n", opt->names, arg);
                 return CMDL_RET_ERROR;
             }
             
-            strncpy(fieldBuf, opt->p_ref->val, 1024);
+            strncpy(fieldBuf, p_ref->val, 1024);
             fieldCount = str_2_fields(fieldBuf, 255, fieldArr+1);
             if (fieldCount>=255) {
                 xerr("strspl() overflow\n");
@@ -701,12 +712,13 @@ int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt
             iter2 = &_iter2;
             iter2->layer = iter->layer;
         } else if (opt->enums) {
-            opt->p_enum = sim_name_2_enum(opt->enums, &arg[1]);
-            if (opt->p_enum == 0) {
+            const cmdl_enum_t *p_enum = sim_name_2_enum(opt->enums, &arg[1]);
+            if (p_enum == 0) {
                 xerr("can't find -%s.%s as enum\n", opt->names, arg);
                 return CMDL_RET_ERROR;
             }
-            *((int *)dst) = opt->p_enum->val;
+            *((int *)dst) = p_enum->val;
+            cmdl_iter_next(iter);
             return 2;
         } else {
             xerr("can't expand -%s.%s neither as ref nor enum\n", opt->names, arg);
@@ -725,7 +737,7 @@ int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt
     return (arg && arg[0] == '%') ? 1 : r;
 }
 
-int cmdl_init(cmdl_opt_t optv[])
+int cmdlgrp_parse_init_check(cmdl_opt_t optv[])
 {
     ENTER_FUNC();
     
@@ -744,10 +756,6 @@ int cmdl_init(cmdl_opt_t optv[])
         
         // init
         opt->n_parse    = 0;
-        opt->argvIdx    = -1;
-        opt->b_default  = 0;
-        opt->p_ref      = 0;
-        opt->p_enum     = 0;
     }
 
     LEAVE_FUNC();
@@ -759,7 +767,7 @@ int cmdlgrp_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
 {
     ENTER_FUNC();
 
-    int ret = cmdl_init(optv);
+    int ret = cmdlgrp_parse_init_check(optv);
     if (ret < 0) {
         xerr("invalid cmdl description defined (%d)\n\n", ret);
         return CMDL_RET_ERROR_INIT;
@@ -798,7 +806,6 @@ int cmdlgrp_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
         }
 
         ++ p_opt->n_parse;
-        p_opt->argvIdx = cmdl_iter_idx(iter);
         
         if (arg[1] == '%') {
             ref_expand[0] = arg;        /* use original opt */
@@ -815,7 +822,7 @@ int cmdlgrp_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
     -- iter->layer;
 
     if (ret > CMDL_RET_HELP) {
-        ret = cmdl_check(iter, dst, optv);
+        ret = cmdlgrp_parse_end_check(iter, dst, optv);
         if (ret < 0) {
             xerr("cmdl_check() failed (%d)\n\n", ret);
             return CMDL_RET_ERROR_CHECK;
@@ -830,7 +837,7 @@ int cmdlgrp_parse(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
 /**
  * @param [in] iter - just for layer trace
  */
-int cmdl_check(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
+int cmdlgrp_parse_end_check(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
 {
     int n_err = 0;
     char *argv[2] = {0};
@@ -931,17 +938,6 @@ int cmdlgrp_print_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
     {
         xlprint(iter->layer, "-%s = ", opt->names);
         opt->parse(iter, (char *)dst + opt->dst_offset, CMDL_PRI_RESULT, opt);
-
-        //FIXME: The following way to get ref.name or enum.name make no sense when:
-        //  1. optv[] was defined in local scope. 
-        //  2. optv[] was reused by diff params.
-        if (opt->p_ref) {
-            xprint(" (%%%s)", opt->p_ref->name);
-        }
-        
-        if (opt->p_enum) {
-            xprint(" (%%%s)", opt->p_enum->name);
-        }
         xprint("\n");
     }
     -- iter->layer;
