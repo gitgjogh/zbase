@@ -171,9 +171,13 @@ cmdl_opt_t* cmdl_set_ref (cmdl_opt_t optv[], const char *opt_name, const cmdl_re
 cmdl_opt_t* cmdl_set_enum(cmdl_opt_t optv[], const char *opt_name, const cmdl_enum_t *enums);
 
 
+/**
+ * default implentation for group options
+ */
 int cmdlgrp_parse(cmdl_iter_t *iter, void *dst, cmdl_opt_t optv[]);
 int cmdlgrp_print_help(cmdl_iter_t *iter, void* null, cmdl_opt_t optv[]);
 int cmdlgrp_print_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[]);
+int cmdlgrp_default_entry(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t optv[]);
 
 
 #ifdef __cplusplus

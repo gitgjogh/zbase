@@ -674,13 +674,15 @@ int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt
     int   fieldCount = 0;
     char *fieldArr[256] = {cmdl_iter_curr(iter)};
     char  fieldBuf[1024] = {0};
+    
+    ENTER_FUNC();
 
     char *arg = cmdl_peek_next(iter);
     xlog_cmdl("[L%d] parse_opt(-%s) : %s\n", iter->layer, opt->names, SAFE_STR(arg, "?"));
     
     if (arg && arg[0] == '%') 
     {
-        /* expand ref or enum */
+        xdbg("expand ref or enum '%s'\n", arg);
         if (opt->refs) {
             opt->p_ref = sim_name_2_ref(opt->refs, &arg[1]);
             if (opt->p_ref == 0) {
@@ -717,6 +719,8 @@ int cmdl_parse_opt(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t* opt
     if (r < 0) {
         return r;
     }
+    
+    LEAVE_FUNC();
     
     return (arg && arg[0] == '%') ? 1 : r;
 }
@@ -943,6 +947,21 @@ int cmdlgrp_print_result(cmdl_iter_t *iter, void* dst, cmdl_opt_t optv[])
     -- iter->layer;
     
     LEAVE_FUNC();
+    
+    return 0;
+}
+
+int cmdlgrp_default_entry(cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t optv[])
+{
+    if (act == CMDL_ACT_PARSE) {
+        return cmdlgrp_parse(iter, dst, optv);
+    }
+    else if (act == CMDL_PRI_HELP) {
+        return cmdlgrp_print_help(iter, 0, optv);
+    }
+    else if (act == CMDL_PRI_RESULT) {
+        return cmdlgrp_print_result(iter, dst, optv);
+    }
     
     return 0;
 }
