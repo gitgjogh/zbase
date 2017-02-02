@@ -341,7 +341,6 @@ int main(int argc, char **argv)
 {
     int i=0, j = 0;
     int exit_code = 0;
-    int cmdl_test(int argc, char **argv);
     
     typedef struct yuv_module {
         const char *name; 
@@ -351,8 +350,6 @@ int main(int argc, char **argv)
     
     const static yuv_module_t sub_main[] = {
         {"list",    zlist_test,     ""},
-        //{"opt",     zopt_test,      ""},
-        {"cmdl",    cmdl_test,      ""},
         {"array",   zarray_test,    ""},
         {"strq",    zstrq_test,     ""},
         {"hash",    zhash_test,     ""},

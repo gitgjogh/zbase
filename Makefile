@@ -9,7 +9,7 @@ CFLAGS = -c -O3
 LIBS = -lm
 
 TMPDIR = mk.tmp
-BINSRCS = ztest.c 
+BINSRCS = ztest.c
 BINOBJS = $(BINSRCS:%.c=$(TMPDIR)/%.o)
 OUTBIN = ztest
 
@@ -32,7 +32,7 @@ $(OUTBIN): $(BINOBJS) $(LIBSIM) $(LIBZBASE) | libzbase
 $(BINOBJS): $(LIBZBASE) Makefile
 $(BINOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
 	@echo; echo "[CC] compiling: $< "
-	$(CC) $(CFLAGS) -I$(LIBSIMDIRS) -I$(LIBZBASEDIRS) -l$(LIBSIM) -l$(LIBZBASE) -o $@ $<
+	$(CC) $(CFLAGS) -I$(LIBSIMDIRS) -I$(LIBZBASEDIRS) -o $@ $<
 
 .PHONY: libzbase
 libzbase $(LIBZBASE):

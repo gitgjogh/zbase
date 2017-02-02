@@ -60,3 +60,11 @@ int cmdl_test(int argc, char **argv)
     
     return 0;
 }
+
+#ifdef _SIM_TEST_
+int main(int argc, char **argv)
+{
+    xlog_init(SLOG_DEFULT);
+    return cmdl_test(argc, argv);
+}
+#endif

@@ -32,3 +32,9 @@ $(LIBSIMOBJS): $(TMPDIR)/%.o:%.c | $(TMPDIR)
 
 $(TMPDIR):
 	mkdir -p $@
+
+.PHONY: test
+test: sim_test
+sim_test: sim_test.c $(LIBSIM)
+	@echo; echo "[CC] sim_test.c"
+	$(CC) -D _SIM_TEST_ -o $@ $^
