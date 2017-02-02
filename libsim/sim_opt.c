@@ -126,8 +126,9 @@ char *get_argv(int argc, char *argv[], int i, const char *name)
 
 int arg_parse_range(int i, int argc, char *argv[], int i_range[2])
 {
-    char *flag=0;
-    char *last=0;
+    SCAN_RET_e ret = 0;
+    const char *flag=0;
+    const char *last=0;
     char *arg = GET_ARGV(i, "range");
     if (!arg) {
         return -1;
@@ -138,8 +139,11 @@ int arg_parse_range(int i, int argc, char *argv[], int i_range[2])
     
     /* parse argv : `$base[~$last]` or `$base[+$count]` */
     //i_range[0] = strtoul (arg, &flag, 10);
-    flag = get_uint32 (arg, &i_range[0]);
-    if (flag==0 || *flag == 0) {       /* no `~$last` or `+$count` */
+    ret = str_2_int(arg, &i_range[0], &flag);
+    if (ret != SCAN_OK) {
+        xerr("<cmdl> Err : Invalid range start\n");
+        return -1;
+    } else if (*flag == 0) {       /* no `~$last` or `+$count` */
         return ++i;
     }
 
@@ -150,7 +154,7 @@ int arg_parse_range(int i, int argc, char *argv[], int i_range[2])
     }
     
     //i_range[1] = strtoul (flag + 1, &last, 10);
-    last = get_uint32 (flag + 1, &i_range[1]);
+    ret = str_2_int (flag + 1, &i_range[1], &last);
     if (last == 0 || *last != 0 ) {
         xerr("<cmdl> Err : Invalid count/end\n");
         i_range[1] = INT_MAX;
@@ -187,7 +191,7 @@ int arg_parse_int(int i, int argc, char *argv[], int *p)
 {
     char *arg = GET_ARGV(i, "int");
     if (arg) {
-        int b_err = str_2_int(arg, p);
+        int b_err = str_2_int(arg, p, 0);
         return (++i) * (b_err ? -1 : 1);
     } else {
         return -1;
@@ -198,7 +202,7 @@ int opt_parse_int(int i, int argc, char *argv[], int *p, int default_val)
 {
     char *arg = GET_ARGV(i, "int");
     if (arg) {
-        int b_err = str_2_int(arg, p);
+        int b_err = str_2_int(arg, p, 0);
         return (++i) * (b_err ? -1 : 1);
     } else {
         *p = default_val;
@@ -409,8 +413,6 @@ int cmdl_parse_range (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
 {
     if (act == CMDL_ACT_PARSE)
     {
-        char *flag=0;
-        char *last=0;
         char *arg = cmdl_peek_next(iter);
         if (!arg || arg[0] == '-') {
             xerr("%s has no arg\n", cmdl_iter_curr(iter));
@@ -420,32 +422,14 @@ int cmdl_parse_range (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         }
 
         int *i_range = dst;
-        i_range[0] = 0;
-        i_range[1] = INT_MAX;
-
-        if (arg[0] != '~' &&  arg[1] != '+') {
-            /* parse argv : `$start[~$last]` or `$start[+$count]` */
-            flag = get_uint32 (arg, &i_range[0]);
-            if (flag==0 || *flag == 0) {       /* no `~$last` or `+$count` */
-                return 2;
-            }
-        }
-
-        /* get `~$last` or `+$count` */
-        if (*flag != '~' && *flag != '+') {
-            xerr("<cmdl> Err : Invalid flag\n");
+        
+        //i_range[0] = 0;
+        //i_range[1] = INT_MAX;
+        
+        int i = arg_parse_range(iter->idx, iter->argc, iter->argv, i_range);
+        if (i < 0) {
+            xerr("<cmdl> Err : Invalid range\n");
             return CMDL_RET_ERROR;
-        }
-        
-        last = get_uint32 (flag + 1, &i_range[1]);
-        if (last == 0 || *last != 0 ) {
-            xerr("<cmdl> Err : Invalid count/end\n");
-            i_range[1] = INT_MAX;
-            return -1;
-        }
-        
-        if (*flag == '+') {
-            i_range[1] += i_range[0];
         }
         
         return 2;
@@ -529,7 +513,7 @@ int cmdl_parse_int   (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
         } else {
             cmdl_iter_next(iter);
         }
-        int b_err = str_2_int(arg, dst);
+        int b_err = str_2_int(arg, dst, 0);
         return b_err ? CMDL_RET_ERROR : 2;
     }
     else if (act == CMDL_PRI_RESULT)
@@ -559,7 +543,7 @@ int cmdl_parse_ints  (cmdl_iter_t *iter, void* dst, CMDL_ACT_e act, cmdl_opt_t *
     {
         for (i=0; i<opt->narg; ++i) {
             char *arg = cmdl_iter_next(iter);
-            if (!arg || /*b_err=*/str_2_int(arg, &((int*)dst)[i])) {
+            if (!arg || /*b_err=*/str_2_int(arg, &((int*)dst)[i], 0)) {
                 xerr(arg ? "str2i() failed\n" : "noarg\n");
                 cmdl_iter_dbg (iter);
                 return CMDL_RET_ERROR;

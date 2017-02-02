@@ -35,14 +35,16 @@ int cmdl_test(int argc, char **argv)
 {
     typedef struct cmdl_param {
         pet_t cat, dog;
+        int  range[2];
     } cmdl_param_t;
     
 #define CMDL_OPT_M(member) offsetof(cmdl_param_t, member)
     cmdl_opt_t cmdl_opt[] =
     {
         { 0, "h,help", 0, cmdl_parse_help,         0,      0,  "show help"},
-        { 1, "dog", 1, cmdl_pet_parser,  CMDL_OPT_M(dog),  0,  "dog's prop...", },
-        { 1, "cat", 1, cmdl_pet_parser,  CMDL_OPT_M(cat),  0,  "cat's prop...", },
+        { 0, "dog", 1, cmdl_pet_parser,  CMDL_OPT_M(dog),  0,  "dog's prop...", },
+        { 0, "cat", 1, cmdl_pet_parser,  CMDL_OPT_M(cat),  0,  "cat's prop...", },
+        { 1, "r",   1, cmdl_parse_range, CMDL_OPT_M(range),0,  "just for range test", },
         { 0, SIM_NULL_END, },
     };
     

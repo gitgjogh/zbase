@@ -165,7 +165,6 @@ int num_leading_zero_bits_u32(uint32_t val);
 #define NLZB32(val)                     (num_leading_zero_bits_u32(val))
 #define NLZB64(val)                     (num_leading_zero_bits_u64(val))
 
-char*   get_uint32(char *str, uint32_t *out);
 int     jump_front(const char* str, const char* jumpset);
 
 /**
@@ -222,26 +221,26 @@ typedef enum {
     SCAN_ERR_NOBEGIN    = (1<<3),
     SCAN_ERR_NOCLOSE    = (1<<5),
     SCAN_ERR_NNULEND    = (1<<6),
-}scan_ret_t;
+} SCAN_RET_e;
 
 /**
- * @param [i] max  
- * @param [o] ret_ only useful if (@return == 0)
- * @param [o] end_ 
- * @return: 0 if success, else @see scan_ret_t
+ * atoi() alias, prefix white space would be skip
+ * @param [in] _str input string to parse()
+ * @param [out] ret_ only useful if (@return == 0)
+ * @param [out] end_ the first char that is not part of the number
+ * @return: 0 if success, else @see SCAN_RET_e
  */
-int scan_for_uint64_npre(const char *_str, uint32_t base, uint64_t max, uint64_t *ret_, const char **end_);
-int scan_for_uint64_pre(const char *_str, uint64_t max, uint64_t *ret_, const char **end_);
 int scan_for_uint64(const char *_str, uint64_t *ret_, const char **end_);
 int scan_for_uint32(const char *_str, uint32_t *ret_, const char **end_);
 int scan_for_uint16(const char *_str, uint16_t *ret_, const char **end_);
 int scan_for_int64(const char *_str, int64_t *ret_, const char **end_);
 int scan_for_int32(const char *_str, int32_t *ret_, const char **end_);
 int scan_for_int16(const char *_str, int16_t *ret_, const char **end_);
-int scan_for_float(const char *_str, float *ret_, const char **end_);
-unsigned int str_2_uint(const char *_str, unsigned int *ret_);
-int str_2_int(const char *_str, int *ret_);
+int str_2_uint(const char *_str, unsigned int *ret_, const char **end_);
+int str_2_int(const char *_str, int *ret_, const char **end_);
 
+/** atof() alias */
+int scan_for_float(const char *_str, float *ret_, const char **end_);
 
 /**
  * Free a memory block and set the pointer pointing to it to NULL.

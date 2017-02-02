@@ -96,25 +96,6 @@ int clip(int v, int minv, int maxv)
 }
 
 /**
- * simple atoi(/[0-9]+/) with the 1st non-digit pointer returned 
- *  @see str_2_uint() which is more delicate 
- */
-char* get_uint32 (char *str, uint32_t *out)
-{
-    char  *curr = str;
-    
-    if ( curr ) {
-        int  c, sum;
-        for (sum=0, curr=str; (c = *curr) && c >= '0' && c <= '9'; ++ curr) {
-            sum = sum * 10 + ( c - '0' );
-        }
-        if (out) { *out = sum; }
-    }
-
-    return curr;
-}
-
-/**
  *  \brief return the pos for 1st-char not in @jumpset
  */
 int jump_front(const char* str, const char* jumpset)
@@ -322,12 +303,12 @@ const char *field_in_record(const char *field, const char *record)
 /**
  *  @brief scan for uint64_t without numerical base prefix.
  *  
- *  @param [i] _str
- *  @param [o] ret_
- *  @param [o] end_
+ *  @param [in] max scaned value check (@ret_ < max), 0 for UINT64_MAX
  *  @return error flag during scanning
  */
-int scan_for_uint64_npre(const char *_str, uint32_t base, uint64_t max, uint64_t *ret_, const char **end_)
+static
+int scan_for_uint64_npre(const char *_str, uint32_t base, uint64_t max,
+                         uint64_t *ret_, const char **end_)
 {
     uint64_t acc = 0;
     uint32_t c, v;
@@ -380,6 +361,14 @@ int scan_for_uint64_npre(const char *_str, uint32_t base, uint64_t max, uint64_t
     return b_err;
 }
 
+/**
+ *  @brief scan for uint64_t number start by diff. base-prefix
+ *      base-10 without prefix
+ *      base-16 start by '0x'/0X'
+ *      base-2 start by '0b'/'0B'
+ *      base-8 start by '0'
+ */
+static
 int scan_for_uint64_pre(const char *_str, uint64_t max, uint64_t *ret_, const char **end_)
 {
     uint32_t base = 10;
@@ -449,6 +438,8 @@ static int scan_for_intN(const char *_str, int Nbit, int64_t *ret_, const char *
             Nbit == 16 ? INT16_MAX : (
             Nbit ==  8 ? INT8_MAX : 0))));
 
+    // since abs(INTx_MIN) = (INTx_MAX) + 1,
+    // under flow would never happen.
     b_err = scan_for_uint64_pre(_str, max, &ret, &end);
 
     if (ret_) { *ret_ = b_neg ? -(int64_t)ret : ret; }
@@ -564,31 +555,25 @@ str2float_end:
     return b_err;
 }
 
-unsigned int str_2_uint(const char *_str, unsigned int *ret_)
+int str_2_uint(const char *_str, unsigned int *ret_, const char **end_)
 {
     uint64_t ret;
     const char *end;
     int N = sizeof(unsigned int) * 8;
     int b_err = scan_for_uintN(_str, N, &ret, &end);
-    if (!b_err && (*end != 0)) {
-        xerr("str_2_uint(%s) not nul ending\n", _str);
-        b_err |= SCAN_ERR_NNULEND;
-    }
     if (ret_) { *ret_ = (unsigned int)ret; }
+    if (end_) { *end_ = end; }
 
     return b_err;
 }
-int str_2_int(const char *_str, int *ret_)
+int str_2_int(const char *_str, int *ret_, const char **end_)
 {
     int64_t ret;
     const char *end;
     int N = sizeof(unsigned int) * 8;
     int b_err = scan_for_intN(_str, N, &ret, &end);
-    if (!b_err && (*end != 0)) {
-        xerr("str_2_int(%s) not nul ending\n", _str);
-        b_err |= SCAN_ERR_NNULEND;
-    }
     if (ret_) { *ret_ = (int)ret; }
+    if (end_) { *end_ = end; }
 
     return b_err;
 }
