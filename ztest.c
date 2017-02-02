@@ -356,7 +356,7 @@ int main(int argc, char **argv)
         {"zhtree",  zhtree_test,    ""},
     };
 
-    xlog_init(SLOG_DEFULT);
+    xlog_init(SLOG_DEFAULT);
     i = arg_parse_xlevel(1, argc, argv);
     
     xdbg("@cmdl>> argv[%d] = %s\n", i, i<argc ? argv[i] : "?");
